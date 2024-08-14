@@ -5,5 +5,8 @@ Einfluesse reichen nicht besonders weit und passieren in kuerzester Zeit. Zwei K
 ```math
 ( A | B )
 ```
-## 1. Groessenordnung der Zeit und Reihenfolge. (kuerzester Zeitabschnitt)
-Ich weiss nicht wie man ueber gleichzeitige Ereignisse nachdenken koennte, weswegen in meinem Spielsystem immer nur ein Ereigniss gleichzeitig stattfinden kann. Damit diese Regel instand gehalten werden kann, muss bei jeder Veraenderung eine klar verstaendliche globale Reihenfolge herrschen. Damit ist die erste Regel der Reihenfolge zu beachten, dass in der Reihenfolge von den kleinsten Zeitabstaenden bis zu den groessten Zeitabstaenden gespielt werden muss. Bis alle Ereignisse des kleinsten Zeitabstands fertig gespielt sind duerfen Ereignisse groesserer Zeitabstaende nicht gespielt werden. Jedoch besteht nun das Problem, dass bei gleichzeitigen und Ereignisse gleicher Zeitabstaenden keine klare Reihenfolge besteht.
+## 1. Groessenordnung eines Moments (Dimension)
+Wie schon vorhin erklaert, muss die Welt in jedem Moment, auf einer Weise in der keine Missverstaendnisse und Paradoxe entstehen, beschrieben werden. Da es nur schwerst moeglich ist, die volle Ausdehnung der Welt in jedem Moment mit den Spielern zu teilen, werden wir verschiedene Groessenordnungen des Moments benutzen um die Welt in verschieden grossen Bereichen aufzugreifen. Die kleinste solche Einheit ist die logische Einheit (Lore: fragment of reality, I, you, the origin, Bruchstueck der Realiaet, Ich, Du, der Ursprung). Wir koennen auf eine beliebige logische Einheit, auf folgender Weise schreiben.
+```math
+|
+```
