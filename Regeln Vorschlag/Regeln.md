@@ -47,8 +47,24 @@ In dieser Phase sind Veraenderungen in den Karten eher gering und Zeitabstaende 
 ## Kampf
 In der Kampfphase sind mehr Geschwindigkeitskosten verfuegbar und Geschehnisse sind Rundenbasiert.
 ### Reihenfolge
-Die Person mit den meisten Geschwindigkeitskosten muss spielen. Haben 2 oder mehr Spieler gleichviele Geschwindigkeitskosten, gewinnt die Aktion mit der hoeheren Geschwindigkeit.
+Die Person mit den meisten Geschwindigkeitskosten muss angreifen oder eine aktive Aktion durchfuehren. Haben 2 oder mehr Spieler gleichviele Geschwindigkeitskosten, gewinnt die Aktion mit der hoeheren Geschwindigkeit. Wird eine Person Angegriffen, darf dieser Abweheren auch wenn dass der Reihenfolge nicht entspricht.
 ### Geschwindigkeitskosten
 Jede Aktion kostet Geschwindigkeit. Diese ist in der Beschreibung enthalten. Wird eine Aktion durchgefuehrt so erhaelt man in der naechsten Runde zusaetzlich Geschwindigkeitskosten gleich der Geschwindigkeit in der diese Aktion durchgefuehrt wurde.
 ### Ende der Runde
 Man kann eine Aktion durchfuehren so lange man mehr Geschwindigkeitskosten als 0 hat.
+### Angriff / Aktive Aktion
+Eine Aktion die vom Spieler initiiert wird. Eine solche Aktion muss in Reihenfolge ausgefuehrt werden.
+### Abwehr
+Diese Aktion wird vom Spieler aktiv eingesetzt, kann jedoch nur dann aktiviert werden, wenn der Spieler angegriffen wird.
+### Passive Abwehr
+Diese Aktion ist bei einem Angriff automatisch aktiv.
+### Effekt
+Diese Aktion kann vom Spieler nicht verhindert werden und erfolt zum Anfang einer neuer Runde.
+### Angriff
+In einem Angriff gibt es einen Angreifer und einen Verteidiger.
+#### Angreifende Aktion
+Eine Angriff ist immer eine Aktion die einen bestimmten Wert besitzt und bei einem erfolgreichen Angriff Konsequenzen hat. Ein Angriff muss immer auf einen Stapel gerichtet sein.
+#### Abwehr Aktion
+Ein Angriff kann vom Verteidiger aktiv abgewehrt werden. Diese kann den Angriffswert entgegen kommen und einen erfolgreichen Angriff verhindern. Abwehraktionen koennen nur durchgefuehrt werden sind die erforderlichen Geschwindigkeitskosten vorhanden.
+#### Passive Abwehr
+Ist ein Angriff erfolgreich und wurde nicht aktiv verteidigt koennen bestimmte Karten den Schaden verkleinern.
