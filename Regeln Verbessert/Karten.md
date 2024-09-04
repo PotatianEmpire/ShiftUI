@@ -1,0 +1,5 @@
+| Name der Karte | Einflusstyp der Karte | Aktionen | Reaktionen | Wechselwirkungen |
+| --- | --- | --- | --- | --- |
+| Tor | Absoluter Einfluss | [Absoluter Befehl] Sind die Kosten vorhanden; Fuehre eine beliebige Aktion aus, die sich auf dem selben Stapel befindet. | [Klopfendes Geraeusch] Ist das Klopfen > 20 Zerstoere diese Karte. | \[Ordnungswert] Diese Karte besitzt keinen Ordnungswert <br>\[Aufstapeln] Die Karte auf dieser Karte muss einen Ordnungswert von 1 besitzen. |
+| Schiff | Klopfen | \[Klopfen] Zahle 0 Zeitkosten und erhalte 2 Zeitkosten naechste Runde. | \[Ueberschwemmung] Wandele jede Einflussart in Klopfen um und gib diese an die naechste Karte weiter. <br>\[Untergang] Fuege 100 Klopfen der naechsten Karte hinzu falls keine weitere Karte auf dieser liegt. | \[Ordnungswert] 1 <br> \[Aufstapeln] Die Karte auf dieser Karte muss einen Ordnungswert von 2 besitzen. |
+| See | Klopfen | \[Traeumen] Zahle 2 Zeitkosten jede Runde in der keine Aktion durchgefuehrt wird. Fuege jede 600 aktionslose Runden 3 Ruhe allen Karten auf dem Stapel hinzu. | 
