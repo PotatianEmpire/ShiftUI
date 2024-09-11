@@ -1,6 +1,6 @@
 # Regeln
 ## Zeit und Tempo
-Jede Aktion verbraucht Zeit und veraendert das Tempo. Die Person mit der meisten Zeit kann eine Aktion durchfuehren. Wenn man keine Aktion durchfuehren kann oder moechte kann man auch Zeit verschwenden. Man kann Angriffe abwehren auch wenn man nicht die meiste Zeit besitzt. Haben alle Personen keine Zeit mehr, ist die Runde zuende. Zum Beginn einer neuen Runde wird Tempo in Zeit umgewandelt. Kann man kein Tempo in Zeit umwandeln muss dies der Spielleitung geteilt werden. Als Spielleitung kann man nun entscheiden was mit dem Charakter geschieht. Es ist zu empfaehlen, den Charakter zum Beispiel als Ohnmaechtig zu erklaeren.
+Jede Aktion verbraucht Zeit und veraendert das Tempo. Die Person mit der meisten Zeit kann eine Aktion durchfuehren. Wenn man keine Aktion durchfuehren kann oder moechte kann man auch Zeit verschwenden. Man kann Angriffe abwehren auch wenn man nicht die meiste Zeit besitzt. Haben alle Personen keine Zeit mehr, ist die Runde zuende. Zum Beginn einer neuen Runde wird Tempo in Zeit umgewandelt. Kann man kein Tempo in Zeit umwandeln muss dies der Spielleitung geteilt werden. Als Spielleitung kann man nun entscheiden was mit dem Charakter geschieht. Es ist zu empfaehlen, den Charakter zum Beispiel als Ohnmaechtig zu erklaeren. Tempo darf auch ins negative gehen. Beim umwandeln zaehlt ein negatives Tempo als kein Tempo.
 ## Kartentypen
 Karten haben bestimmte Typen. Wird in der Beschreibung ein bestimmter Kartentyp genannt sind alle Karte dieses Kartentypen gemeint.
 ## Aktionstypen
