@@ -12,6 +12,6 @@ Aktionen wie Heilungen und sonstige koennen mit dem gleichem Prinzip eines Angri
 ## Treffer
 Manche Angriffe, Heilungen und sonstige Aktionen muessen das Ziel treffen. Dazu muessen beteiligte Spieler eine Trefferzahl wuerfeln. Der Wuerfel zum Auswuerfeln ist vom Angriff bestimmt. Die Aktion trifft alle Spieler deren Trefferzahl dem des Angreifers uebereinstimmen. Der Angreifer kann meherere Trefferzahlen haben.
 ### Trefferwuerfel verbessern
-Wird ein Trefferwuerfel verbessert wird die Seitenzahl in folgender Reihenfolge verkleinert. w100 -> w50 -> w20 -> w12 -> w10 -> w8 -> w6 -> w4 -> garantierter Treffer. Wird der Trefferwuerfel verschlechtert gilt die umgekehrte Reihenfolge.
+Wird ein Trefferwuerfel verbessert wird die Seitenzahl in folgender Reihenfolge verkleinert. unmoeglicher Treffer -> w100 -> w50 -> w20 -> w12 -> w10 -> w8 -> w6 -> w4 -> garantierter Treffer. Wird der Trefferwuerfel verschlechtert gilt die umgekehrte Reihenfolge.
 ## Zerstoerung
 Wird eine Karte Zerstoert gibt es einen Zerstoerungseffekt.

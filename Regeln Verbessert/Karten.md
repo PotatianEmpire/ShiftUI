@@ -1,12 +1,20 @@
-- [Lebewesen](#lebewesen)
-    - [Humanoide](#humanoide)
-    - [Schleim](#schleim)
+- [Karten](#karten)
+    - [Lebewesen](#lebewesen)
+        - [Humanoide](#humanoide)
+        - [Schleim](#schleim)
+        - [Drachen](#drachen)
+    - [Faehigkeiten](#faehigkeiten)
+    - [Ausruestung](#ausruestung)
+    - [Zauber](#zauber)
 
-# Lebewesen
+- [Stat blocks](#stat-blocks)
+
+# Karten
+## Lebewesen
 | Name der Karte | Kartentypen | Beschreibung | Name der Aktion | Zeit | Treffer | Aktion | Tempo | Zerstoerungseffekt |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| <div id="humanoide"> Zwerg | Lebewesen Humanoid Koerperteil | Zwerge werden bis zu 400 Jahre alt. Sie beistzen eine hervorragende Konstitution, haben Giftresistenz und koennen gut im Dunkeln sehen. | Aushalten | 0 | 1 TW | Wehrt mit 4 + 1w4 gegen alle Arten von Schaden ab. + 1w8 Abwehr gegen Gift-Karten. | -3 | Bleibt die Karte bis zum Ende der naechsten Runde zerstoert strirbt man. | 
-| Elf | Lebewesen Humanoid Koerperteil | Elfen werden gut ueber 700 Jahre alt. Sie sind wendig und durchblicken jede Situation. | Akzeptanz | 0 | 1 TW | Wehrt mit 6 gegen alle Arten von Schaden ab. + 1w4 Abwehr gegen Magie-Karten und + 1w8 gegen Charme-Karten. | -4 | Bleibt die Karte bis zum Ende der naechsten Runde zerstoert strirbt man. |
+| <div id="humanoide"> Zwerg | Lebewesen Humanoid Koerperteil | Zwerge werden bis zu 400 Jahre alt. Sie beistzen eine hervorragende Konstitution, haben Giftresistenz und koennen gut im Dunkeln sehen. | Aushalten | 0 | 1 TW | Wehrt mit 4 + 1w4 gegen alle Arten von Schaden ab. + 1w8 Abwehr gegen Gift-Karten. | -3 | Bleibt die Karte bis zum Ende der naechsten Runde zerstoert strirbt man. |
+| Elf | Lebewesen Humanoid Koerperteil | Elfen werden gut ueber 700 Jahre alt. Sie sind wendig und durchblicken jede Situation. | Akzeptanz | 0 | 1 TW | Wehrt mit 6 gegen alle Arten von Schaden ab. + 1w4 Abwehr gegen Magie-Karten und + 1w8 gegen Charme-Karten. | -4 | Bleibt die Karte bis zum Ende der naechsten Runde zerstoert strirbt man. | 
 | Halbling | Lebewesen Humanoid Koerperteil | Kaum 90 Zentimenter gross sind Halblinge leicht zu uebersehen. Mit Glueck auf ihrer Seite und unerschuetterlichem Mut sind sie bereit fuer jedes Abenteuer. | Mit Glueck | 0 | 1 TW | Wehrt mit 2w6 gegen alle Arten von Schaden ab. + 1w8 Abwehr gegen Einschuechterung-Karten. | -3 | Bleibt die Karte bis zum Ende der naechsten Runde zerstoert strirbt man. |
 | Mensch | Lebewesen Humanoid Koerperteil | Menschen sind ein vielfaeltiges Volk mit einem starken Willen. Menschen schrecken nicht vor Herausforderungen zurueck. | Ich kann noch! | 0 | 1 TW | Wehrt mit 2w4 gegen alle Arten von Schaden ab. +3 Abwehr solange Tempo groesser als 0. | -4 | Bleibt die Karte bis zum Ende der naechsten Runde zerstoert stirbt man. |
 | <div id="schleim"> Blauer Schleim | Lebewesen Schleim Koerperteil | Ein freundliches Monster, verteidigt sich gegen Angreifer und kann mit Gemuese gezaehmt werden. | Schleimiger Angriff | -3 | 2x 1w4 | Greift mit 1w4 eine Gegenstand-Karte oder Koerperteil-Karte innerhalb eines halben Meters an. Ziehe bei einem Treffer 1 Tempo vom Ziel ab. | +2 | Werden alle Karten dieses Typen zerstoert, lasse einen blauen Glasstein fallen. |
@@ -15,4 +23,17 @@
 | Roter Schleim | Lebewesen Schleim Koerperteil | Der rote Schleim greift nicht schleimige Sachen an, wenn es Hunger hat. Es ernaehrt sich von Eichel und Blaetter. | Heisser Schleim | -5 | 2x 1w4 | Greift mit 1w4 eine Gegenstand-Karte oder Koerperteil-Karte innerhalb eines halben Meters an. Fuege bei einem Treffer dem Ziel die Karte heissen Schleim hinzu. | +4 | Werden alle Karten dieses Typen zerstoert, lasse einen roten Glasstein fallen. |
 | Giftiger Schleim | Lebewesen Schleim Koerperteil | Sieht hellgruen aus und verteidigt sich wenn es angegriffen wird. Es ernaehrt sich von Giftgras | Giftigen Schleim spucken | -3 | 3x 1w8 | Greift mit 1w6 eine Gegenstand-Karte oder Koerperteil-Karte innerhalb 2 Meter an. Ist der Angriff erfolgreich fuege die Karte giftiger Schleim dem Ziel zu. | +3 | Werden alle Karten dieses Typen zerstoert, lasse einen hellgruenen Glasstein fallen. |
 | Schleim Schaman | Lebewesen Schleim Koerperteil Magie Verstaerkung | Ein dunkelblauer Schleim und haelt einen Schleim Schamanenstab. Ohne den Stab ist der Schleim Schaman nur ein blauer Schleim. | Schleimiger Angriff | -3 | 2x 1w4 | Greift mit 1w4 eine Gegenstand-Karte oder Koerperteil-Karte innerhalb eines halben Meters an. | +5 | Werden alle Karten dieses Typen zerstoert, lasse einen blauen Glasstein fallen. |
-| Boeser Schleimkoenig | Lebewesen Schleim Koerperteil | Ein roter Schleim mit einer goldenen Krone auf dem Kopf. Ohne diese Krone ist der Schleimkoenig nur ein blauer Schleim. | Schleim Befehlen | 0 | - | Kann alle Schleime in einem 100 Meter Radius Befehle erteilen und sie kontrollieren. | 0 | Wird die Karte zerstoert, absorbiert der Schleim alle anderen Schleime in einem 5 Meter Radius und bekommt alle deren Karten und erhaelt +10 Tempo. |
+| Schleimkoenig | Lebewesen Schleim Koerperteil | Ein roter Schleim mit einer goldenen Krone auf dem Kopf. Ohne diese Krone ist der Schleimkoenig nur ein blauer Schleim. | Schleim Befehlen | 0 | 1 TW | Kann alle Schleime in einem 100 Meter Radius Befehle erteilen und sie kontrollieren. | 0 | Wird die Karte zerstoert, absorbiert der Schleim alle anderen Schleime in einem 5 Meter Radius, bekommt alle deren Karten und erhaelt +10 Tempo. |
+| <div id="drachen"> Erwachsener Roter Drache | Lebewesen Drakonisch Koerperteil | The odor of sulfur and pumice surrounds a red dragon, whose swept-back horns and spinal frill define its silhouette. Its beaked snout vents smoke at all times, and its eyes dance with flame when it is angry. | Das Herz eines Drachen | 0 | 1 TW, verschlechtert TW um 1 | Wehrt mit 1w4 gegen alle Schadensarten ab. | 0 | Bleibt die Karte bis zum Ende der naechsten Runde zerstoert stirbt man. |
+| Junger Gruene Drache | Lebewesen Drakonisch Koerperteil | The most cunning and treacherous of true dragons, green dragons use misdirection and trickery to get the upper hand against their enemies. A green dragon is recognized by the crest that begins near its eyes and continues down its spine, reaching full height just behind the skull. | Das Herz eines Drachen | 0 | 1 TW, verschlechtert TW um 1 | Wehrt mit 1w4 gegen alle Schadensarten ab. | 0 | Bleibt die Karte bis zum Ende der naechsten Runde zerstoert stirbt man. |
+| Luftelementar | Lebewesen Elementar Koerperteil | An air elemental is a funneling cloud of whirling air with a vague semblance of a face. It can turn itself into a screaming cyclone, creating a whirlwind that batters creatures even as it flings them away. | - | 0 | 2 TW | Wehrt mit 8 + 2w4 gegen alle Schadenstypen ab
+
+## Faehigkeiten
+| Name der Karte | Kartentypen | Beschreibung | Name der Aktion | Zeit | Treffer | Aktion | Tempo | Zerstoerungseffekt |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+
+## Ausruestung
+
+## Zauber
+
+# Stat blocks
