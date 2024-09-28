@@ -1,4 +1,4 @@
-# Skill / Card System
+# Hit Dice / Effect / Energy System
 ## Rules and Foundations
 ## Theoretical Analysis
 ## Examples
