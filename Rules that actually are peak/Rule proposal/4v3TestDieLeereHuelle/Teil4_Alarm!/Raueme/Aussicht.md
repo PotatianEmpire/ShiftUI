@@ -1,0 +1,1 @@
+Das Licht faellt durch das Fenster rein. Man sieht wie sich eine riesige Eislandschaft in allen Richtungen erstreckt.

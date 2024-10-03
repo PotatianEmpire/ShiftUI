@@ -1,0 +1,1 @@
+Schweres Beben umhuellt den Raum und die uebrigen Huelsen sterben. Ein kurze Rast.

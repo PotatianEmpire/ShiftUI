@@ -1,4 +1,4 @@
-# Hand Geschicklich
+# Hand Stark
 Ladung I. 1
 Ladung II. 3
 Ladung III. 1

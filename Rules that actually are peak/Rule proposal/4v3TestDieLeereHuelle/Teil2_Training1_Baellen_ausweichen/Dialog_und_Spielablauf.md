@@ -4,7 +4,7 @@ Erzaehler: "Im jetzigen Raum oeffnet sich eine Tuer in der Wand, die bis her nic
 
 -- Raum 2 --
 
-Erzaehler: "Nachdem die letzte Person durch die Tuer getreten ist faellt die Tuer automatisch zu und verschwindet wieder in der Wand. Der neue Raum scheint um etwa das doppelte Gross zu sein. Die Waende des neuen Raumes scheinen genauso Weich, wie die des letzten, aber in verschiedenen Farben. Auf der gegenueberliegenden Seite des Raums befinden sich 3 Roboterarme.
+Erzaehler: "Nachdem die letzte Person durch die Tuer getreten ist faellt die Tuer automatisch zu und verschwindet wieder in der Wand. Der neue Raum scheint um etwa das doppelte Gross zu sein. Die Waende des neuen Raumes scheinen genauso Weich, wie die des letzten, aber in verschiedenen Farben. Auf der linken Seite des Raums befinden sich 3 Roboterarme.
 
 Aufsehroboter34: "Beep. Beep. Wilkommen in Trainingsraum 1b. Wir werden Sie nun bitten den Baellen auszuweichen, die wir in ihre Richtung werfen. Diese Uebung ist noetig um Ihnen bewusst zu werden wo sie sich rauemlich befinden."
 

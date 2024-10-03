@@ -1,0 +1,1 @@
+Blaue Tapete und schwache Beleuchtung.
