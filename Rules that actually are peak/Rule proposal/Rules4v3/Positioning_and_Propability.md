@@ -15,6 +15,12 @@ Propabilities can be improved.
 Improving propablity works in following order:
 d100 -> d60 -> d20 -> d12 -> d10 -> d8 -> d6 -> d4 -> d1
 Worsening propability works in the opposite direction.
+# Determining position
+Moving: Local card position + position modifiers = position
+Attack: Local card position + position modifiers = position
+## Rounding up and down
+2d9 -> 2d8
+1d3 -> 1d4
 ### translation
 | english | german |
 | -- | -- |
