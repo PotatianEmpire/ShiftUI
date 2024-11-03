@@ -1,0 +1,3 @@
+let availableCharacters = [
+    test
+]
