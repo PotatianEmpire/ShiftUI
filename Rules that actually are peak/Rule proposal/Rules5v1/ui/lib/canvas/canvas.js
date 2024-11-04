@@ -5,15 +5,26 @@
 let canvas = {
 
     context: document.getElementById("view").getContext("2d"),
-    draw(img,x,y,width,height){
-        this.context.drawImage(img,x,y,width,height);
+    draw(img,x,y,width,height,mode = "align-top-left"){
+        switch (mode) {
+            case "align-top-left":
+                this.context.drawImage(img,x,y,width,height);
+                break;
+            case "align-center":
+                this.context.drawImage(img,x - width >> 1, y - height >> 1,width,height);
+                break;
+            default:
+                return false;
+        }
     },
     sprites: {},
     render () {
         this.context.clearRect(0, 0, this.context.canvas.width, this.context.canvas.height);
         for (const spriteKey of Object.keys(this.sprites)) {
             let sprite = this.sprites[spriteKey];
-            this.draw(sprite.img,sprite.x,sprite.y,sprite.width,sprite.height)
+            if (!sprite.mode)
+                sprite.mode = "align-top-left";
+            this.draw(sprite.img,sprite.x,sprite.y,sprite.width,sprite.height,sprite.mode);
         }
     },
     mouseOn (sprite) {

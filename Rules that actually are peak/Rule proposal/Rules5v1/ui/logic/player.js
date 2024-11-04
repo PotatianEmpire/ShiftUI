@@ -74,3 +74,7 @@ class Player {
         this.cards[cardId].activate(this,[]);
     }
 }
+
+class Player {
+
+}
