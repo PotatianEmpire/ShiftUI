@@ -6,7 +6,7 @@ let createButton = (sprite,onHover,onClick,def) => {
             return false;
     if(!canvas.mouseOn(sprite))
         return def();
-    if(!mouseDown){
+    if(!mouse.getMouseDown()){
         if(sprite.buildUp) {
             sprite.buildUp = false;
             return onClick();

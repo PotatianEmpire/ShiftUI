@@ -2,9 +2,9 @@ let buildUp = false;
 let players = {
     playerCount: 2
 }
-let fps = 24;
+let fps = 60;
 
-let stage = initChoosePlayerCount;
+let stage = choosePlayerCount.initChoosePlayerCount;
 
 
 let main = () => {
