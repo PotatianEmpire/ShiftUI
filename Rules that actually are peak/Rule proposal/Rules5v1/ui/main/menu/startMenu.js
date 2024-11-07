@@ -5,11 +5,13 @@ let startMenu = {
 
     },
     startMenu: () => {
-        canvas.context.font = "100px 'DEADCRT'";
-        canvas.context.fillStyle = "#000000";
-        canvas.context.fillText("Players: " + players.playerCount + keys.getKeyString(), 400, 400);
 
-        console.log("Hi");
+        canvas.render(startMenu.sprites);
+
+        canvas.context.font = canvas.scale(0.025) + "px 'DEADCRT'";
+        canvas.context.fillStyle = "#000000";
+        canvas.context.textAlign = "center";
+        canvas.context.fillText("Name of Game goes here", canvas.scale(0.5), canvas.scale(0.2));
 
         return startMenu.startMenu;
     }

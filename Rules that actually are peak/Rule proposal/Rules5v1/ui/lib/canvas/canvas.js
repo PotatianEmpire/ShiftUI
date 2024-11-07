@@ -4,20 +4,26 @@
 
 let canvas = {
 
+    width: 0,
+    height: 0,
     context: document.getElementById("view").getContext("2d"),
     draw(img,x,y,width,height,mode = "align-top-left"){
         switch (mode) {
             case "align-top-left":
-                this.context.drawImage(img,x,y,width,height);
+                this.context.drawImage(img,this.scale(x),this.scale(y),this.scale(width),this.scale(height));
                 break;
             case "align-center":
-                this.context.drawImage(img,x - width / 2, y - height / 2,width,height);
+                this.context.drawImage(img,this.scale(x - width / 2),this.scale(y - height / 2),this.scale(width),this.scale(height));
                 break;
             default:
                 return false;
         }
     },
+    scale: (coord) => coord * canvas.width,
     render (sprites) {
+        
+        canvas.context.canvas.height = this.height;
+        canvas.context.canvas.width = this.width;
         this.context.clearRect(0, 0, this.context.canvas.width, this.context.canvas.height);
         for (const spriteKey of Object.keys(sprites)) {
             let sprite = sprites[spriteKey];
@@ -52,5 +58,3 @@ let canvas = {
     }
 }
 
-canvas.context.canvas.height = window.innerHeight;
-canvas.context.canvas.width = window.innerWidth;
