@@ -35,6 +35,7 @@ let choosePlayerCount = {
 
 
     choosePlayerCount: () => {
+        
         canvas.render(choosePlayerCount.sprites);
         
         canvas.context.font = "100px 'Trebuchet MS', sans-serif";
@@ -63,6 +64,8 @@ let choosePlayerCount = {
             () => canvas.scaleFromOriginal(choosePlayerCount.sprites.nextButton,1.0)))
                 return choosePlayerCount.cleanupChoosePlayerCount;
         
+
+
         mouse.unstaggerAll();
         return choosePlayerCount.choosePlayerCount;
     },
