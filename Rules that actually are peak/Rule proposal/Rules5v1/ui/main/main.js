@@ -15,7 +15,7 @@ let main = () => {
     frames++;
 
     if (frames == fps) {
-        console.log(frames/((Date.now() - start) / 1000));
+        console.log(Math.round(frames/((Date.now() - start) / 1000)))
         frames = 1;
         start = Date.now();
     }
