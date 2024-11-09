@@ -1,4 +1,6 @@
 let fps = 60;
+let frames = 1;
+let start = Date.now();
 
 let stage = load.load;
 
@@ -9,6 +11,14 @@ canvas.height = window.innerHeight;
 let main = () => {
 
     stage = stage();
+
+    frames++;
+
+    if (frames == fps) {
+        console.log(frames/((Date.now() - start) / 1000));
+        frames = 1;
+        start = Date.now();
+    }
 
 }
 
