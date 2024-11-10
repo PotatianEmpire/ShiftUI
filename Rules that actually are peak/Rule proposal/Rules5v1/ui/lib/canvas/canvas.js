@@ -33,13 +33,15 @@ let canvas = {
                 scaledWidth,
                 scaledHeight);
         if(sprite.text) {
+            let offset = 0;
+            if(sprite.align == "top")
+                offset = -this.scale(sprite.height/2);
             let style = {
                 fontSize: 48,
                 fontFamily: "'serif'",
                 color: "#000000",
                 align: "left"
             }
-            let offset = 0;
             sprite.text.split("\n").forEach((val,i) => {
                 let valArr = val.split('"');
                 let text = valArr[0];
@@ -88,11 +90,13 @@ let canvas = {
         
         canvas.context.canvas.height = this.height;
         canvas.context.canvas.width = this.width;
-        this.context.clearRect(0, 0, this.context.canvas.width, this.context.canvas.height);
         for (const spriteKey of Object.keys(sprites)) {
             let sprite = sprites[spriteKey];
             this.draw(sprite)
         }
+    },
+    clear () {
+        this.context.clearRect(0, 0, this.context.canvas.width, this.context.canvas.height);
     },
     mouseOn (sprite) {
         if (sprite.x - sprite.width / 2 > mouse.mouseX || sprite.y - sprite.height / 2 > mouse.mouseY)

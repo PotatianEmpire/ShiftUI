@@ -1,4 +1,0 @@
-class Charge {
-    constructor () {}
-    overcharge() {}
-}

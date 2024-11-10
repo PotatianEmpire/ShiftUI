@@ -2,31 +2,25 @@ let startMenu = {
     sprites: {
 
         titleText: {
-            text: `0.04 center 'vinque-rg' #000000 "Name of the game goes here"
-            #00FF00 "title phrase goes here"`,
+            text: `
+0.04 #262626 center "ハサミ"
+0.03 ""
+"攻撃力：１００"
+`,
             x: 0.5,
-            y: 0.2,
+            y: 0.3,
             width: 0.5,
-            height: 0.1,
-            textBoxHeightScale: 1.1
+            height: 0.5,
+            textBoxHeightScale: 1.1,
+            angle: 0,
+            align: "top",
+            img: images.dragon
         }
 
     },
     startMenu: () => {
 
         canvas.render(startMenu.sprites);
-
-        createButton(startMenu.sprites.titleText,
-            () => {
-                startMenu.sprites.titleText.text = `0.04 'DEADCRT' #00FF00 center "You are hovering"
-                "over the hitbox"`;
-            },
-            () => {},
-            () => {
-                startMenu.sprites.titleText.text = `0.04 center 'vinque-rg' #000000 "Name of the game goes here"
-                #00FF00 "title phrase goes here"`;
-            }
-        )
         
         return startMenu.startMenu;
     }
