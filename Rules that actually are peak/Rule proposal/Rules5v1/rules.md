@@ -7,7 +7,7 @@ Time cannot return. </br>
 # 4
 You can only endure so much. </br>
 # 5
-Idealism and belief hand in hand. </br>
+In shadow we seek truth. </br>
 # 6
 Clear your mind and take aim. </br>
 # 7

@@ -112,3 +112,26 @@ let canvas = {
     getTextHeight: (sprite,fontSize) => sprite.text.split("\n").length * fontSize * sprite.textBoxHeightScale,
 }
 
+class Sprite {
+    x = 0;
+    y = 0;
+    width = 0;
+    height = 0;
+    constructor (x,y,width,height) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+    }
+    addText (text,textBoxHeightScale,align) {
+        this.text = text
+        this.textBoxHeightScale = textBoxHeightScale;
+        this.align = align;
+    }
+    addImage (image) {
+        this.img = images.missing;
+    }
+    rotate (angle) {
+        angle = 0;
+    }
+}
