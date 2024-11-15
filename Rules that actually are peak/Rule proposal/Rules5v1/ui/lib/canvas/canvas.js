@@ -129,9 +129,31 @@ class Sprite {
         this.align = align;
     }
     addImage (image) {
-        this.img = images.missing;
+        this.img = image;
     }
     rotate (angle) {
-        angle = 0;
+        this.angle = angle;
+    }
+}
+
+class ImageSprite extends Sprite {
+    constructor (x,y,width,height,image) {
+        super(x,y,width,height);
+        this.img = image;
+    }   
+}
+
+class TextSprite extends Sprite {
+    constructor (x,y,width,height,text,textBoxHeightScale,align) {
+        super(x,y,width,height);
+        this.text = text
+        this.textBoxHeightScale = textBoxHeightScale;
+        this.align = align;
+    }
+}
+class TextImageSprite extends TextSprite {
+    constructor (x,y,width,height,image,text,textBoxHeightScale,align) {
+        super(x,y,width,height,text,textBoxHeightScale,align)
+        this.img = image;
     }
 }

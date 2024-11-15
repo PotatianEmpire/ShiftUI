@@ -1,27 +1,30 @@
 let startMenu = {
     sprites: {
 
-        titleText: {
-            text: `
-0.04 #262626 center "ハサミ"
-0.03 ""
-"攻撃力：１００"
-`,
-            x: 0.5,
-            y: 0.3,
-            width: 0.5,
-            height: 0.5,
-            textBoxHeightScale: 1.1,
-            angle: 0,
-            align: "top",
-            img: images.dragon
-        }
 
     },
     startMenu: () => {
 
         canvas.render(startMenu.sprites);
         
+        for (const key in startMenu.sprites) {
+            startMenu.sprites[key].angle += 0.01;
+        } 
+
+        return startMenu.startMenu;
+    },
+    startMenuInit: () => {
+        console.log("startMenuInit")
+        for (let i = 0; i < 1000; i++) {
+            startMenu.sprites[i] = new ImageSprite(
+                Math.random(),
+                Math.random(),
+                0.1,
+                0.1,
+                images.dragon
+            );
+            startMenu.sprites[i].rotate(0);
+        }
         return startMenu.startMenu;
     }
 }

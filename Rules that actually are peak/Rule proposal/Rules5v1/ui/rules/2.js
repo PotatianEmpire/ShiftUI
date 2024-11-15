@@ -1,7 +1,9 @@
 class Card {
+    backgroundSprite = new Sprite ();
     skills = [{
         description: {
-            sprite: new Sprite(0,0,0,0),
+            height: 0,
+            sprite: new Sprite(),
             activateable: {
                 onHover () {},
                 onClick () {},
@@ -19,54 +21,55 @@ class Card {
             }
         },
         targetting: {
+            sprite: new Sprite(),
+            onHover () {},
+            onClick () {},
+            onDefault () {}
         },
         activateable () {},
         activate () {},
+        deactivate () {},
         active: false,
     }];
     charges = [];
 }
-let activateCard = {
+let cardUI = {
     /**
      * 
      * @param {Player} player 
-     * @param {Array.<{card:Sprite,
-     * charges:Array.<Sprite>,
-     * activationButtons:Array.<Sprite>,
-     * targettingSprites:Array.<Sprite>}>} cardUISprites 
+     * @param {Card} card 
+     * @param {number} x 
+     * @param {number} y 
+     * @param {number} width 
+     * @param {number} height 
      */
-    activate (player,cardUISprites) {
-        player.hand.forEach((card,cardId) => {
-            let cardDescription = '';
-            card.skills.forEach((skill,skillId) => {
-                if (skill.active) {
-                    createButton(
-                        skill.description.sprite,
-                        skill.description.active.onHover,
-                        skill.description.active.onClick,
-                        skill.description.active.onDefault
-                    )
-                } else if (skill.activateable()) {
-                    createButton(
-                        skill.description.sprite,
-                        skill.description.activateable.onHover,
-                        skill.description.activateable.onClick,
-                        skill.description.activateable.onDefault
-                    )
-                } else {
-                    createButton(
-                        skill.description.sprite,
-                        skill.description.unactivateable.onHover,
-                        skill.description.unactivateable.onClick,
-                        skill.description.unactivateable.onDefault
-                    )
-                }
-            });
-            cardUISprites[cardId].card.addText(
-                cardDescription,
-                1.0, "top"
-            );
+    createSelectedCardUI (player,card,x,y,width,height) {
+        let activateCardUISprite = {
+            cardBackground: card.backgroundSprite,
+            skills: [],
+            charge: {}
+        }
+        card.skills.forEach((value,id) => {
+            value.description.sprite.x = x - width/2;
+            value.description.sprite.y = y + value.description.height * id;
+            value.targetting.sprite.x = x + width/2 + value.targetting.sprite.width/2;
+            value.targetting.sprite.y = value.description.sprite.y;
+            activateCardUISprite.skills[id] =
+                {
+                    activationButton: value.description.sprite,
+                    targetting: value.targetting.sprite
+                };
+        });
+        card.charges.forEach((value,id) => {
             
         })
     }
 }
+
+/*
+todo:
+1. activation buttons
+2. charge formatting
+3. overcharge
+4. rendering
+*/
