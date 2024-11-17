@@ -21,9 +21,10 @@ let startMenu = {
                 Math.random(),
                 0.1,
                 0.1,
-                images.dragon
+                images.cardTest
             );
             startMenu.sprites[i].rotate(0);
+            startMenu.sprites[i].transparency = 1;
         }
         return startMenu.startMenu;
     }

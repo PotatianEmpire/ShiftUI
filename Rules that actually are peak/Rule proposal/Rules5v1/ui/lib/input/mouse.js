@@ -8,6 +8,11 @@ let mouse = {
     mouseDownStagger: false,
     mouseClick: false,
     mouseClicks: 0,
+    mouseMove: false,
+    mouseMoveStagger: false,
+    mouseMoveOldX: 0,
+    mouseMoveOldY: 0,
+    mouseMoveTolerance: 0.01,
     getMouseX: () => {
         return mouse.mouseX;
     },
@@ -25,12 +30,18 @@ let mouse = {
     },
     getWheel: () => {
         mouse.wheelStagger = false;
+        mouse.wheel = 0;
         return mouse.wheel;
     },
     unstaggerAll: () => {
         mouse.wheelStagger = false;
         mouse.mouseDownStagger = false;
         mouse.mouseClicks = 0;
+    },
+    getMouseMove: () => {
+        mouse.mouseMoveStagger = false;
+        mouse.mouseMove = false;
+        return mouse.mouseMove;
     }
 }
 
@@ -38,6 +49,17 @@ document.addEventListener("mousemove",(e) => {
 
     mouse.mouseX = canvas.unscale(e.clientX);
     mouse.mouseY = canvas.unscale(e.clientY);
+
+    let deltaX = mouse.mouseMoveOldX - mouse.mouseX;
+    let deltaY = mouse.mouseMoveOldY - mouse.mouseY;
+    if (mouse.mouseMoveStagger || 
+        Math.sqrt(deltaX * deltaX + deltaY * deltaY) < mouse.mouseMoveTolerance
+    )
+        return;
+    mouse.mouseMoveOldX = mouse.mouseX;
+    mouse.mouseMoveOldY = mouse.mouseY;
+    mouse.mouseMove = true;
+    mouse.mouseMoveStagger = true;
 
 })
 

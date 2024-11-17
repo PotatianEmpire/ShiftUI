@@ -4,7 +4,7 @@ let start = Date.now();
 
 let stage = load.load;
 
-let testStage = particleTest.particleTestInit;
+let testStage = rule2Test.init;
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
@@ -27,4 +27,4 @@ let main = () => {
 
 console.log(canvas.unscale(0.5))
 
-setInterval(() => main(),1000/fps);
+let intervalId = setInterval(() => main(),1000/fps);
