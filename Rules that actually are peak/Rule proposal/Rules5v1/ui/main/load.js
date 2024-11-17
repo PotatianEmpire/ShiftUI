@@ -12,7 +12,7 @@ let load = {
         if(load.images.loadingComplete &&
             load.fonts.loadingComplete &&
             document.readyState == "complete")
-            return startMenu.startMenuInit;
+            return testStage;
 
         console.log("loading...")
         return load.loadingAnimation;

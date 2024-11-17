@@ -47,7 +47,11 @@ let cardUI = {
         let activateCardUISprite = {
             cardBackground: card.backgroundSprite,
             skills: [],
-            charge: {}
+            charge: {
+                graphOutline: {},
+                chargeBars: [],
+                
+            }
         }
         card.skills.forEach((value,id) => {
             value.description.sprite.x = x - width/2;

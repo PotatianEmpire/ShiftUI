@@ -6,6 +6,9 @@ let canvas = {
 
     width: 0,
     height: 0,
+    /**
+     * @type {CanvasRenderingContext2D}
+     */
     context: document.getElementById("view").getContext("2d"),
     draw(sprite){
         if (!sprite.x)
@@ -83,6 +86,16 @@ let canvas = {
             })
         }
         this.context.restore();
+        if (typeof sprite.particleEmitter == "function" &&
+            typeof sprite.particleIterator == "function"
+        ) {
+            sprite.particleEmitter(sprite.particles);
+            if (sprite.particles)
+                sprite.particles = sprite.particles.filter((val,id) => {
+                    sprite.particleIterator(val);
+                    return !val.delete;
+                });
+        }
     },
     scale: (coord) => coord * canvas.width,
     unscale: (coord) => coord / canvas.width,
@@ -93,6 +106,14 @@ let canvas = {
         for (const spriteKey of Object.keys(sprites)) {
             let sprite = sprites[spriteKey];
             this.draw(sprite)
+        }
+    },
+    pipelineRender () {
+        canvas.context.canvas.height = this.height;
+        canvas.context.canvas.width = this.width;
+        for (const spriteKey of Object.keys(canvas.sprites)) {
+            let sprite = canvas.sprites[spriteKey];
+            canvas.draw(sprite);
         }
     },
     clear () {
@@ -134,6 +155,15 @@ class Sprite {
     rotate (angle) {
         this.angle = angle;
     }
+    addParticleEmitter (particleEmitter,particleIterator) {
+        if (typeof particleEmitter == "function" &&
+            typeof particleIterator == "function"
+        ) {
+            this.particleEmitter = particleEmitter;
+            this.particleIterator = particleIterator;
+            this.particles = [];
+        }
+    }
 }
 
 class ImageSprite extends Sprite {
@@ -155,5 +185,12 @@ class TextImageSprite extends TextSprite {
     constructor (x,y,width,height,image,text,textBoxHeightScale,align) {
         super(x,y,width,height,text,textBoxHeightScale,align)
         this.img = image;
+    }
+}
+
+class ParticleEmitter extends Sprite {
+    constructor (x,y,width,height,particleEmitter,particleIterator) {
+        super(x,y,width,height);
+        this.addParticleEmitter(particleEmitter,particleIterator);
     }
 }
