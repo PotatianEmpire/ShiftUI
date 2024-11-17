@@ -17,21 +17,27 @@ let rule2Test = {
         canvas.width =window.innerWidth;
         canvas.height = window.innerHeight;
         console.log(images.missing.loading);
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 5; i++) {
             let myCard = new Card(
                 1,4/3,images.cardTest,(card) => {
-                    card.width = 1 * 1.2;
-                    card.height = 4/3 * 1.2;
+                    card.width = 1 * 1.0;
+                    card.height = 4/3 * 1.0;
+                    card.offsetY = -0.2
+                    card.offsetX = 0;
                     card.transparency = 1;
                     
                 },(card) => {
                     card.width = 1;
                     card.height = 4/3;
-                    card.transparency = 0.2;
+                    card.offsetY = 0
+                    card.offsetX = -1.0
+                    card.transparency = 1.0;
                 },(card) => {
                     card.width = 1;
                     card.height = 4/3;
-                    card.transparency = 1;
+                    card.offsetY = 0;
+                    card.offsetX = 0;
+                    card.transparency = 1.0;
                 })
             
             rule2Test.player.addCard(myCard);
