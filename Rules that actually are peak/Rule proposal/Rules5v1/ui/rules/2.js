@@ -4,9 +4,9 @@ class Card extends ImageSprite {
      * @param {Number} width 
      * @param {Number} height 
      * @param {Image} background 
-     * @param {{(card: Card) : void}} focus 
-     * @param {{(card: Card) : void}} unfocus 
-     * @param {{(card: Card) : void}} idle 
+     * @param {{(card: Card, stackId: Number, id: Number) : void}} focus 
+     * @param {{(card: Card, stackId: Number, id: Number) : void}} unfocus 
+     * @param {{(card: Card, stackId: Number, id: Number) : void}} idle 
      */
     constructor(width,height,background,
         focus,unfocus,idle
@@ -97,11 +97,11 @@ class Player{
             let focusId = id
             if (mouse.wheel != 0) {
                 focusId = ((addend) => {
-                    if (focusId + addend >= this.deck.length )
-                        return this.deck.length - 1;
-                    if (focusId + addend < 0)
-                        return 0;
                     card.focused = false;
+                    if (focusId + addend >= this.deck.length )
+                        return 0;
+                    if (focusId + addend < 0)
+                        return this.deck.length - 1;
                     return focusId + addend;
                 }) (mouse.wheel > 0 ? -1 : 1);
                 mouse.getWheel();
@@ -115,18 +115,7 @@ class Player{
         this.hand.forEach((stack,stackId) => {
             stack.forEach((card,id) => {
                 card.unfocused = false;
-                if (!card.focused || this.focused)
-                    return;
-                if (!canvas.mouseOnRel(card,this.ui.deckPosition.x,this.ui.deckPosition.y,this.ui.cardWidth)) {
-                    card.focused = false;
-                    return;
-                }
-                if (mouse.wheel != 0)
-                    this.hand[stackId][(id + mouse.getWheel() > 0 ? 1 : -1) % this.hand[stackId].length].focused = true;
-                for (let i = 0; i < id; i++) {
-                    this.hand[stackId][i].unfocused = true;
-                }
-                this.focused = true;
+                
             })
         })
         
@@ -159,11 +148,11 @@ class Player{
 
         // animate card
         this.deck.forEach((card,id) => {
-            card.show();
+            card.show(-1,id);
         })
         this.hand.forEach((stack,stackId) => {
             stack.forEach((card,id) => {
-                card.show();
+                card.show(stackId,id);
             })
         })
         

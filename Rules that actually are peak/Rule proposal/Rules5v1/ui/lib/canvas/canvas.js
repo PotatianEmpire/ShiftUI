@@ -20,16 +20,25 @@ let canvas = {
     draw(sprite,x,y,reference){
         if (!sprite.x)
             sprite.x = 0;
-        let scaledX = this.scale(this.localScale(sprite.x,reference) + x);
         if (!sprite.y)
             sprite.y = 0;
-        let scaledY = this.scale(this.localScale(sprite.y,reference) + y);
         if (!sprite.width)
             sprite.width = 0;
-        let scaledWidth = this.scale(this.localScale(sprite.width,reference));
         if (!sprite.height)
             sprite.height = 0;
-        let scaledHeight = this.scale(this.localScale(sprite.height,reference));
+        let scaledX, scaledY, scaledWidth, scaledHeight;
+        if (sprite.z) {
+            scaledX = this.scale((this.localScale(sprite.x,reference) + x - 0.5) / (1 + this.localScale(sprite.z,reference))) + this.width / 2;
+            scaledY = this.scale((this.localScale(sprite.y,reference) + y - this.unscale(this.height)/2) / (1 + this.localScale(sprite.z,reference))) + this.height / 2;
+            scaledWidth = this.scale((this.localScale(sprite.width,reference)) / (1 + this.localScale(sprite.z,reference)));
+            scaledHeight = this.scale((this.localScale(sprite.height,reference)) / (1 + this.localScale(sprite.z,reference)));
+        } else {
+            scaledX = this.scale(this.localScale(sprite.x,reference) + x);
+            scaledY = this.scale(this.localScale(sprite.y,reference) + y);
+            scaledWidth = this.scale(this.localScale(sprite.width,reference));
+            scaledHeight = this.scale(this.localScale(sprite.height,reference));
+        }
+
 
     //     if(sprite.img)
     //         console.log(`
@@ -118,6 +127,7 @@ let canvas = {
                 });
         }
         if (sprite.subSprites) {
+            console.log("rendering subsprites!")
             this.render(sprite.subSprites,sprite.x,sprite.y,sprite.width);
         }
     },
