@@ -127,7 +127,6 @@ let canvas = {
                 });
         }
         if (sprite.subSprites) {
-            console.log("rendering subsprites!")
             this.render(sprite.subSprites,sprite.x,sprite.y,sprite.width);
         }
     },
@@ -160,6 +159,11 @@ let canvas = {
         this.context.clearRect(0, 0, this.context.canvas.width, this.context.canvas.height);
     },
     mouseOn (sprite) {
+        for (const spriteKey of Object.keys(sprites)) {
+            let subSprite = sprite.subSprites[spriteKey];
+            if(this.mouseOn(subSprite))
+                return true;
+        }
         if (sprite.x - sprite.width / 2 > mouse.mouseX || sprite.y - sprite.height / 2 > mouse.mouseY)
             return false;
         if (sprite.x + sprite.width / 2 < mouse.mouseX || sprite.y + sprite.height / 2 < mouse.mouseY)
@@ -171,6 +175,11 @@ let canvas = {
         let scaledY = this.localScale(sprite.y,reference) + y;
         let scaledWidth = this.localScale(sprite.width,reference);
         let scaledHeight = this.localScale(sprite.height,reference);
+        for (const spriteKey of Object.keys(sprites)) {
+            let subSprite = sprite.subSprites[spriteKey];
+            if(this.mouseOnRel(subSprite,scaledX,scaledY,scaledWidth))
+                return true;
+        }
         if (scaledX - scaledWidth / 2 > mouse.mouseX || scaledY - scaledHeight / 2 > mouse.mouseY)
             return false;
         if (scaledX + scaledWidth / 2 < mouse.mouseX || scaledY + scaledHeight / 2 < mouse.mouseY)
@@ -222,6 +231,11 @@ class Sprite {
     }
     addTransparency (transparency) {
         this.transparency = transparency;
+    }
+    append (parentObject,key) {
+        if (!parentObject.subSprites)
+            parentObject.subSprites = {};
+        parentObject.subSprites[key] = key;
     }
 }
 
