@@ -19,6 +19,14 @@ let canvas = {
      * @param {*} reference 
      */
     draw(sprite,x,y,reference){
+        if (sprite.deactivated)
+            return;
+        if(typeof sprite.animation == "function") {
+            if(sprite.wasActivated())
+                sprite.animation.init(sprite);
+            else
+                sprite.animation.animation(sprite);
+        }
         if (!sprite.x)
             sprite.x = 0;
         if (!sprite.y)
@@ -66,8 +74,16 @@ let canvas = {
                 scaledY - scaledHeight / 2,
                 scaledWidth,
                 scaledHeight);
-        if(typeof sprite.animation == "function")
-            this.animation = this.animation(this);
+        if(sprite.sample)
+            this.context.drawImage(sprite.sample.img,
+                this.localScale(sprite.sample.sampleX,sprite.sample.img.width),
+                this.localScale(sprite.sample.sampleY,sprite.sample.img.height),
+                this.localScale(sprite.sample.sampleWidth,sprite.sample.img.width),
+                this.localScale(sprite.sample.sampleHeight,sprite.sample.img.height),
+                scaledX - scaledWidth / 2,
+                scaledY - scaledHeight / 2,
+                scaledWidth,
+                scaledHeight);
         if(sprite.text) {
             let offset = 0;
             if(sprite.align == "top")
@@ -130,7 +146,7 @@ let canvas = {
                 });
         }
         if (sprite.subSprites) {
-            this.render(sprite.subSprites,sprite.x,sprite.y,sprite.width);
+            this.render(sprite.subSprites,this.unscale(scaledX),this.unscale(scaledY),this.unscale(scaledWidth));
         }
     },
     scale: (coord) => coord * canvas.width,
@@ -194,6 +210,8 @@ class Sprite {
     y = 0;
     width = 0;
     height = 0;
+    deactivated = false;
+    stateSwitch = false;
     constructor (x,y,width,height,subSprites = null) {
         this.x = x;
         this.y = y;
@@ -237,10 +255,44 @@ class Sprite {
      * 
      * @param {{(sprite: Sprite) : Function}} animation 
      */
-    addAnimation (animation) {
-        if (typeof animation == "function")
+    addAnimation (init,animation) {
+        if (typeof animation != "function" ||
+            typeof init != "function")
             return;
-        this.animation = animation;
+        this.animation = {
+            animation: animation,
+            init: init
+        };
+    }
+    /**
+     * 
+     * @param {Sample} sample 
+     */
+    addImageSample (sample) {
+        this.sample = sample;
+    }
+    deactivate () {
+        this.stateSwitch = !this.deactivated;
+        this.deactivated = true;
+    }
+    activate () {
+        this.stateSwitch = this.deactivated;
+        this.deactivated = false;
+    }
+    wasActivated () {
+        let ret = this.stateSwitch;
+        this.stateSwitch = false;
+        return ret;
+    }
+} 
+
+class Sample {
+    constructor (image,sampleX,sampleY,sampleWidth,sampleHeight) {
+        this.img = image;
+        this.sampleX = sampleX;
+        this.sampleY = sampleY;
+        this.sampleWidth = sampleWidth;
+        this.sampleHeight = sampleHeight;
     }
 }
 
@@ -261,8 +313,15 @@ class TextSprite extends Sprite {
 }
 class TextImageSprite extends TextSprite {
     constructor (x,y,width,height,image,text,textBoxHeightScale,align,subSprites = null) {
-        super(x,y,width,height,text,textBoxHeightScale,align,subSprites)
+        super(x,y,width,height,text,textBoxHeightScale,align,subSprites);
         this.img = image;
+    }
+}
+
+class SampleSprite extends Sprite {
+    constructor (x,y,width,height,sample) {
+        super(x,y,width,height);
+        this.addImageSample(sample);
     }
 }
 

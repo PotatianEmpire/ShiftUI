@@ -15,3 +15,13 @@ let createButton = (sprite,onHover,onClick,def) => {
     }
     sprite.buildUp = true;
 }
+
+/**
+ * 
+ * @param {{(val: *,id: Number) : void}} callback 
+ */
+Array.prototype.reverseForEach = function (callback) {
+    for(let i = this.length - 1; i >= 0; i--) {
+        callback(this[i],i);
+    }
+}
