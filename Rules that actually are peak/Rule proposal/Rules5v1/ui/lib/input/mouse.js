@@ -53,8 +53,7 @@ document.addEventListener("mousemove",(e) => {
     let deltaX = mouse.mouseMoveOldX - mouse.mouseX;
     let deltaY = mouse.mouseMoveOldY - mouse.mouseY;
     if (mouse.mouseMoveStagger || 
-        Math.sqrt(deltaX * deltaX + deltaY * deltaY) < mouse.mouseMoveTolerance
-    )
+        Math.sqrt(deltaX * deltaX + deltaY * deltaY) < mouse.mouseMoveTolerance)
         return;
     mouse.mouseMoveOldX = mouse.mouseX;
     mouse.mouseMoveOldY = mouse.mouseY;

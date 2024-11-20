@@ -21,13 +21,13 @@ class Card extends ImageSprite {
         this.idle = idle;
     }
 
-    show () {
+    show (stackId,id) {
         if (this.focused)
-            this.focus(this);
+            this.focus(this,stackId,id);
         else if (this.unfocused)
-            this.unfocus(this);
+            this.unfocus(this,stackId,id);
         else
-            this.idle(this);
+            this.idle(this,stackId,id);
     }
     // for using passive and animating passive on character
     passives () {}
@@ -62,6 +62,13 @@ class Player{
         this.ui = ui;
     }
     addCard (card) {
+        for (let stackId = 0; stackId < this.hand.length; stackId++) {
+            const stack = this.hand[stackId];
+            if (stack.length > 2)
+                continue;
+            stack.push(card);
+            return;
+        }
         this.deck.push(card);
     }
     ui = {
@@ -90,11 +97,10 @@ class Player{
             if (!card.focused || this.focused)
                 return;
             if (!canvas.mouseOnRel(card,this.ui.deckPosition.x,this.ui.deckPosition.y,this.ui.cardWidth) && mouse.mouseMove) {
-                mouse.getMouseMove();
                 card.focused = false;
                 return;
             }
-            let focusId = id
+            let focusId = id;
             if (mouse.wheel != 0) {
                 focusId = ((addend) => {
                     card.focused = false;
@@ -103,7 +109,7 @@ class Player{
                     if (focusId + addend < 0)
                         return this.deck.length - 1;
                     return focusId + addend;
-                }) (mouse.wheel > 0 ? -1 : 1);
+                }) (mouse.wheel < 0 ? -1 : 1);
                 mouse.getWheel();
                 this.deck[focusId].focused = true;
             }
@@ -115,7 +121,34 @@ class Player{
         this.hand.forEach((stack,stackId) => {
             stack.forEach((card,id) => {
                 card.unfocused = false;
-                
+                if (!card.focused || this.focused)
+                    return;
+                if (!canvas.mouseOnRel(card,this.ui.handPosition.x,this.ui.handPosition.y,this.ui.cardWidth) && mouse.mouseMove) {
+                    card.focused = false;
+                    return;
+                }
+                let focusId = id;
+                if (mouse.wheel != 0) {
+                    focusId = ((addend) => {
+                        card.focused = false;
+                        if (focusId + addend >= stack.length )
+                            return 0;
+                        if (focusId + addend < 0)
+                            return stack.length - 1;
+                        return focusId + addend;
+                    }) (mouse.wheel < 0 ? -1 : 1);
+                    mouse.getWheel();
+                    stack[focusId].focused = true;
+                }
+                for (let stackIterator = 0; stackIterator < stackId; stackIterator++) {
+                    this.hand[stackIterator].forEach(card => {
+                        card.unfocused = true;
+                    })
+                }
+                for (let cardIterator = 0; cardIterator < focusId; cardIterator++) {
+                    stack[cardIterator].unfocused = true;
+                }
+                this.focused = true;
             })
         })
         
@@ -131,11 +164,11 @@ class Player{
         })
         this.hand.forEach((stack,stackId) => {
             stack.forEach((card,id) => {
-                if (this.focused || !canvas.mouseOnRel(card,this.ui.deckPosition.x,this.ui.deckPosition.y,this.ui.cardWidth))
+                if (this.focused || !canvas.mouseOnRel(card,this.ui.handPosition.x,this.ui.handPosition.y,this.ui.cardWidth))
                     return;
                 card.focused = true;
                 for (let i = 0; i < id; i++) {
-                    this.hand[stackId][i].unfocused = true;
+                    stack[i].unfocused = true;
                 }
                 for (let stackI = 0; stackI < stackId; stackI++) {
                     for (let cardI = 0; cardI < this.hand[stackI].length; cardI++) {
@@ -155,6 +188,8 @@ class Player{
                 card.show(stackId,id);
             })
         })
+
+        mouse.getMouseMove();
         
         this.deck.forEach((card,id) => {
             card.x = id * 0.2 - this.deck.length * 0.1 + card.offsetX;
@@ -162,33 +197,33 @@ class Player{
         })
         this.hand[0].forEach((card,id) => {
             card.x = -0.5 + id * 0.2 + card.offsetX;
-            card.y = 1/3 - id * 0.2 - card.offsetY;
+            card.y = 1/3 - id * 0.2 + card.offsetY;
         })
         this.hand[1].forEach((card,id) => {
             card.x = card.offsetX + id * 0.2;
-            card.y = -1 + card.offsetY - id * 0.2;
+            card.y = -5/3 + card.offsetY - id * 0.2;
         })
         this.hand[2].forEach((card,id) => {
-            card.x = -1 + card.offsetX + id * 0.2;
-            card.y = card.offsetX - id * 0.2;
+            card.x = -1.5 + card.offsetX + id * 0.2;
+            card.y = card.offsetY - id * 0.2;
         })
         this.hand[3].forEach((card,id) => {
-            card.x = 1 + card.offsetX + id * 0.2;
+            card.x = 1.5 + card.offsetX + id * 0.2;
             card.y = card.offsetY - id * 0.2;
         })
         this.hand[4].forEach((card,id) => {
             card.x = card.offsetX + id * 0.2;
-            card.y = 1 + card.offsetX - id * 0.2;
+            card.y = 5/3 + card.offsetY - id * 0.2;
         })
         this.hand[5].forEach((card,id) => {
             card.x = 0.5 + id * 0.2 + card.offsetX;
-            card.y = -1/3 - id * 0.2 - card.offsetY;
+            card.y = -1/3 - id * 0.2 + card.offsetY;
         })
 
         canvas.reverseRenderArray(this.deck,this.ui.deckPosition.x,this.ui.deckPosition.y,this.ui.cardWidth);
-        this.hand.forEach((stack) => {
-            canvas.reverseRenderArray(stack,this.ui.handPosition.x,this.ui.handPosition.y,this.ui.cardWidth);
-        })
+        for (let stackIndex = this.hand.length - 1; stackIndex >= 0; stackIndex--) {
+            canvas.reverseRenderArray(this.hand[stackIndex],this.ui.handPosition.x,this.ui.handPosition.y,this.ui.cardWidth);
+        }
     }
     inflict () {}
     time () {}

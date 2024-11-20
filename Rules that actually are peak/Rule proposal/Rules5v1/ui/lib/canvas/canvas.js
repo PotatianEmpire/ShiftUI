@@ -6,6 +6,7 @@ let canvas = {
 
     width: 0,
     height: 0,
+    referenceHeight: 0,
     /**
      * @type {CanvasRenderingContext2D}
      */
@@ -65,6 +66,8 @@ let canvas = {
                 scaledY - scaledHeight / 2,
                 scaledWidth,
                 scaledHeight);
+        if(typeof sprite.animation == "function")
+            this.animation = this.animation(this);
         if(sprite.text) {
             let offset = 0;
             if(sprite.align == "top")
@@ -156,30 +159,23 @@ let canvas = {
     clear () {
         canvas.context.canvas.height = this.height;
         canvas.context.canvas.width = this.width;
+        this.referenceHeight = this.unscale(this.height);
         this.context.clearRect(0, 0, this.context.canvas.width, this.context.canvas.height);
     },
     mouseOn (sprite) {
-        for (const spriteKey of Object.keys(sprites)) {
-            let subSprite = sprite.subSprites[spriteKey];
-            if(this.mouseOn(subSprite))
-                return true;
-        }
-        if (sprite.x - sprite.width / 2 > mouse.mouseX || sprite.y - sprite.height / 2 > mouse.mouseY)
-            return false;
-        if (sprite.x + sprite.width / 2 < mouse.mouseX || sprite.y + sprite.height / 2 < mouse.mouseY)
-            return false;
-        return true;
+        this.mouseOnRel(sprite,0,0,1);
     },
     mouseOnRel (sprite,x,y,reference) {
         let scaledX = this.localScale(sprite.x,reference) + x;
         let scaledY = this.localScale(sprite.y,reference) + y;
         let scaledWidth = this.localScale(sprite.width,reference);
         let scaledHeight = this.localScale(sprite.height,reference);
-        for (const spriteKey of Object.keys(sprites)) {
-            let subSprite = sprite.subSprites[spriteKey];
-            if(this.mouseOnRel(subSprite,scaledX,scaledY,scaledWidth))
-                return true;
-        }
+        if (sprite.subSprites)
+            for (const spriteKey of Object.keys(sprite.subSprites)) {
+                let subSprite = sprite.subSprites[spriteKey];
+                if(this.mouseOnRel(subSprite,scaledX,scaledY,scaledWidth))
+                    return true;
+            }
         if (scaledX - scaledWidth / 2 > mouse.mouseX || scaledY - scaledHeight / 2 > mouse.mouseY)
             return false;
         if (scaledX + scaledWidth / 2 < mouse.mouseX || scaledY + scaledHeight / 2 < mouse.mouseY)
@@ -237,6 +233,15 @@ class Sprite {
             parentObject.subSprites = {};
         parentObject.subSprites[key] = key;
     }
+    /**
+     * 
+     * @param {{(sprite: Sprite) : Function}} animation 
+     */
+    addAnimation (animation) {
+        if (typeof animation == "function")
+            return;
+        this.animation = animation;
+    }
 }
 
 class ImageSprite extends Sprite {
@@ -265,5 +270,21 @@ class ParticleEmitter extends Sprite {
     constructor (x,y,width,height,particleEmitter,particleIterator,subSprites = null) {
         super(x,y,width,height,subSprites);
         this.addParticleEmitter(particleEmitter,particleIterator);
+    }
+}
+
+class AnimatedSprite extends Sprite {
+    /**
+     * 
+     * @param {Number} x 
+     * @param {Number} y 
+     * @param {Number} width 
+     * @param {Number} height 
+     * @param {{(sprite: Sprite) : Function}} animation 
+     * @param {Object} subSprites 
+     */
+    constructor (x,y,width,height,animation,subSprites = null) {
+        super(x,y,width,height,subSprites);
+        this.addAnimation(animation);
     }
 }
