@@ -253,7 +253,8 @@ class Sprite {
     }
     /**
      * 
-     * @param {{(sprite: Sprite) : Function}} animation 
+     * @param {{(sprite: Sprite) : void}} init
+     * @param {{(sprite: Sprite) : void}} animation 
      */
     addAnimation (init,animation) {
         if (typeof animation != "function" ||

@@ -25,7 +25,7 @@ let rule2Test = {
                     card.offsetY = 0;
                     card.offsetX = 0;
                     card.transparency = 1;
-                    card.subSprites.charges.deactivate = false;
+                    card.subSprites.charges.activate();
                     card.subSprites.charges.subSprites.charge1.sample.sampleHeight = mouse.mouseX
                     card.subSprites.charges.subSprites.charge1.height = mouse.mouseX;
                 },(card,stackId,id) => {
@@ -34,14 +34,14 @@ let rule2Test = {
                     card.offsetY = 0
                     card.offsetX = 0;
                     card.transparency = 0.2/(id + 1);
-                    card.subSprites.charges.deactivate = true;
+                    card.subSprites.charges.deactivate()
                 },(card,stackId,id) => {
                     card.width = 1;
                     card.height = 4/3;
                     card.offsetY = 0;
                     card.offsetX = 0;
                     card.transparency = 1;
-                    card.subSprites.charges.deactivate = true;
+                    card.subSprites.charges.deactivate()
                 })
             
             rule2Test.player.addCard(myCard);

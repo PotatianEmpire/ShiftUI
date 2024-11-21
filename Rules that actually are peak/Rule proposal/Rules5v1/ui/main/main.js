@@ -4,7 +4,7 @@ let start = Date.now();
 
 let stage = load.load;
 
-let testStage = rule2Test.init;
+let testStage = test3dSprite.init;
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
