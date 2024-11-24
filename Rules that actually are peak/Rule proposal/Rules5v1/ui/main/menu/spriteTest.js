@@ -20,7 +20,7 @@ let startMenu = {
     },
     startMenuInit: () => {
         console.log("startMenuInit")
-        let objectCount = 2000
+        let objectCount = 100
         for (let i = 0; i < objectCount; i++) {
             startMenu.sprites[i] = new ImageSprite(
                 Math.random() - 0.5,

@@ -428,7 +428,7 @@ class AnimatedSprite extends Sprite {
      * @param {Number} y 
      * @param {Number} width 
      * @param {Number} height 
-     * @param {{(sprite: Sprite) : Function}} animation 
+     * @param {ActivatedFunction} animation 
      * @param {Object} subSprites 
      */
     constructor (x,y,width,height,animation,subSprites = null) {
