@@ -63,63 +63,137 @@ class Card extends ImageSprite {
     }
 }
 
-class Player{
-    /**
-     * 
-     * @param {{
-     *  cardWidth: Number,
-     *  deckPosition: {
-     *      x: Number,
-     *      y: Number
-     *  },
-     *  handPosition: {
-     *      x: Number,
-     *      y: Number
-     *  }
-     * }} ui 
-     */
-    constructor (ui) {
-        this.ui = ui;
+
+
+class Character extends Sprite {
+    constructor (x,y,width,height) {
+        super (x,y,width,height);
+        this.constructCards();
+        this.constructOnTurn();
     }
-    addCard (card) {
-        for (let stackId = 0; stackId < this.hand.length; stackId++) {
-            const stack = this.hand[stackId];
-            if (stack.length > 2)
-                continue;
-            stack.push(card);
-            return;
+    constructCards () {
+        let cardsSprite = new Sprite(0,0,0.1,0.1);
+        cardsSprite.addSubPass(sprite => {
+            canvas.reverseRenderArray(this.cards.deck,sprite.x,sprite.y,sprite.width);
+            canvas.reverseRenderArray(this.cards.hand,sprite.x,sprite.y,sprite.width);
+        });
+        cardsSprite.addActivation(sprite => {
+            sprite.animation.activate();
+        }, sprite => {
+            sprite.animation.deactivate();
+        })
+        cardsSprite.addAnimationToChain(new ActivatedFunction(
+            sprite => {
+                sprite.x = 0.5;
+                sprite.y = 0.5;
+                sprite.width = 0.1;
+            },
+            sprite => {
+                this.subSprites.cards.focus(this.cards.hand,sprite);
+                this.subSprites.cards.focus(this.cards.deck,sprite);
+                this.cards.deck.forEach((card,cardId) => {
+                    card.show("deck",cardId);
+                    card.x = id * 0.2 - this.cards.deck.length * 0.1 + card.offsetX;
+                    card.y = card.offsetY;
+                })
+                this.cards.hand.forEach((card,cardId) => {
+                    card.show("hand",cardId);
+                    card.x = id * 0.2 - this.cards.hand.length * 0.1 + card.offsetX;
+                    card.y = card.offsetY;
+                })
+            }
+        ),"cardSelection");
+        cardsSprite.addAnimationToChain(new ActivatedFunction(
+            sprite => {
+                sprite.x = this.x;
+                sprite.y = this.y;
+                sprite.width = 0.05;
+                this.cards.deck.forEach((card,cardId) => {
+                    card.focused = false;
+                    card.unfocused = false;
+                })
+                this.cards.hand.forEach((card,cardId) => {
+                    card.focused = false;
+                    card.unfocused = false;
+                })
+            }, sprite => {
+                this.cards.deck.forEach((card,cardId) => {
+                    card.show("deck",cardId);
+                })
+            }
+        ),"cardIdle")
+        cardsSprite.appendAsSpriteTo(this.subSprites.cards);
+    }
+    constructOnTurn () {
+        this.subSprites.onTurn = new Sprite();
+        this.subSprites.onTurn.addActivation(sprite => {
+            this.subSprites.cards.swapAnimation("cardSelection");
+            this.subSprites.cards.activate();
+        }, sprite => {
+            this.subSprites.cards.swapAnimation("cardIdle")
+        })
+    }
+    cards = {
+        /** @type {Array<Card>} */
+        deck: [],
+        /** @type {Array<Card>} */
+        hand: []
+    }
+    /** @type {Time} */
+    time = null;
+
+    subSprites = {
+        /** @type {Sprite} */
+        onTurn: {},
+        ///** @type {Sprite} */
+        cards: {
+            /**
+             * 
+             * @param {Array<Card>} cards 
+             * @param {Sprite} sprite
+             */
+            focus (cards,sprite) {
+                let focused = false;
+                cards.forEach((card,cardId) => {
+                    card.unfocused = false;
+                    if (!card.focused || focused.focused)
+                        return;
+                    if (!canvas.mouseOnRel(card,sprite.x,sprite.y,sprite.width) && mouse.mouseMove) {
+                        card.focused = false;
+                        return;
+                    }
+                    let focusId = cardId;
+                    if (mouse.wheel != 0) {
+                        focusId = ((addend) => {
+                            card.focused = false;
+                            if (focusId + addend >= cards.length )
+                                return 0;
+                            if (focusId + addend < 0)
+                                return cards.length - 1;
+                            return focusId + addend;
+                        }) (mouse.wheel < 0 ? -1 : 1);
+                        mouse.getWheel();
+                        cards[focusId].focused = true;
+                    }
+                    for (let i = 0; i < focusId; i++) {
+                        focused.deck[i].unfocused = true;
+                    }
+                    focused = true;
+                })
+                this.deck.forEach((card,cardId) => {
+                    if (focused || !canvas.mouseOnRel(card,sprite.x,sprite.y,sprite.width))
+                        return;
+                    card.focused = true;
+                    for (let i = 0; i < cardId; i++) {
+                        cards[i].unfocused = true;
+                    }
+                    focused = true;
+                })
+            }
         }
-        this.deck.push(card);
     }
-    ui = {
-        cardWidth: 0.05,
-        deckPosition: {
-            x: 0,
-            y: 0
-        },
-        handPosition: {
-            x: 0,
-            y: 0
-        }
-    }
-    /** @type {Array<Card>} */
-    deck = [];
-    /** @type {Array<Array<Card>>} */
-    hand = [[],[],[],[],[],[]];
-    focused = false;
-    pauseUI = false;
-    onTurn () {
+}
 
-        this.focusCard();
-
-        this.animate();
-
-        this.render();
-        
-    }
-    focusCard () {}
-    render () {}
-    animate () {}
-    inflict () {}
-    time () {}
+class Card extends ImageSprite {
+    
 }

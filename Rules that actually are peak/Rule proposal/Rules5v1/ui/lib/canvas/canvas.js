@@ -19,13 +19,29 @@ let canvas = {
      * @param {*} reference 
      */
     draw(sprite,x,y,reference){
+        if(typeof sprite.activation == "function" &&
+            typeof sprite.deactivation == "function")
+            if (sprite.stateSwitched()) {
+                if (sprite.deactivated)
+                    sprite.deactivation();
+                else
+                    sprite.activation();
+            }
         if (sprite.deactivated)
             return;
-        if(typeof sprite.animation == "function") {
-            if(sprite.wasActivated())
-                sprite.animation.init(sprite);
-            else
-                sprite.animation.animation(sprite);
+        if(sprite.main instanceof ActivatedFunction) {
+            if(sprite.main.active) {
+                if(sprite.main.wasActivated())
+                    sprite.main.init(sprite);
+                sprite.main.func(sprite);
+            }
+        }
+        if(sprite.animation instanceof ActivatedFunction) {
+            if(sprite.animation.active) {
+                if(sprite.animation.wasActivated())
+                    sprite.animation.init(sprite);
+                sprite.animation.func(sprite);
+            }
         }
         if (!sprite.x)
             sprite.x = 0;
@@ -47,18 +63,6 @@ let canvas = {
             scaledWidth = this.scale(this.localScale(sprite.width,reference));
             scaledHeight = this.scale(this.localScale(sprite.height,reference));
         }
-
-
-    //     if(sprite.img)
-    //         console.log(`
-    // x: ${scaledX};
-    // y: ${scaledY};
-    // widht: ${scaledWidth};
-    // height: ${scaledHeight};
-    // angle: ${sprite.angle};
-    // image: ${sprite.img};
-    // transparency: ${sprite.transparency};
-    // text: ${sprite.text}`)
 
         this.context.save();
         if(sprite.angle) {
@@ -145,6 +149,8 @@ let canvas = {
                     return !val.delete;
                 });
         }
+        if (typeof sprite.subPass == "function")
+            sprite.subPass(sprite);
         if (sprite.subSprites) {
             this.render(sprite.subSprites,this.unscale(scaledX),this.unscale(scaledY),this.unscale(scaledWidth));
         }
@@ -205,6 +211,37 @@ let canvas = {
     getTextHeight: (sprite,fontSize) => sprite.text.split("\n").length * fontSize * sprite.textBoxHeightScale,
 }
 
+class ActivatedFunction {
+    /**
+     * 
+     * @param {{(sprite: Sprite) : void}} init 
+     * @param {{(sprite: Sprite) : void}} func 
+     * @returns 
+     */
+    constructor (init = () => {},func = () => {}) {
+        if (typeof init == "function" &&
+            typeof func == "function")
+            return;
+        this.init = init;
+        this.func = func;
+    }
+    active = false;
+    stateSwitch = false;
+    activate () {
+        this.stateSwitch = !this.active;
+        this.active = true;
+    }
+    deactivate () {
+        this.stateSwitch = this.active;
+        this.active = false;
+    }
+    wasActivated () {
+        let ret = this.stateSwitch;
+        this.stateSwitch = false;
+        return ret;
+    }
+}
+
 class Sprite {
     x = 0;
     y = 0;
@@ -212,7 +249,7 @@ class Sprite {
     height = 0;
     deactivated = false;
     stateSwitch = false;
-    constructor (x,y,width,height,subSprites = null) {
+    constructor (x = 0,y = 0,width = 0,height = 0,subSprites = null) {
         this.x = x;
         this.y = y;
         this.width = width;
@@ -246,24 +283,23 @@ class Sprite {
     addTransparency (transparency) {
         this.transparency = transparency;
     }
-    append (parentObject,key) {
+    appendAsSubSpriteTo (parentObject,key) {
         if (!parentObject.subSprites)
             parentObject.subSprites = {};
         parentObject.subSprites[key] = key;
     }
+    appendAsSpriteTo (parentObject) {
+        for (const key of Object.keys(this)) {
+            parentObject[key] = this[key];
+        }
+    }
     /**
      * 
-     * @param {{(sprite: Sprite) : void}} init
-     * @param {{(sprite: Sprite) : void}} animation 
+     * @param {ActivatedFunction} animation 
      */
-    addAnimation (init,animation) {
-        if (typeof animation != "function" ||
-            typeof init != "function")
-            return;
-        this.animation = {
-            animation: animation,
-            init: init
-        };
+    addAnimation(animation) {
+        if (animation instanceof ActivatedFunction)
+            this.animation = animation;
     }
     /**
      * 
@@ -281,9 +317,61 @@ class Sprite {
         this.deactivated = false;
     }
     wasActivated () {
+        let ret = this.stateSwitch && !this.deactivated;
+        this.stateSwitch = false;
+        return ret;
+    }
+    stateSwitched () {
         let ret = this.stateSwitch;
         this.stateSwitch = false;
         return ret;
+    }
+    /**
+     * 
+     * @param {{(sprite: Sprite) : void}} subPass 
+     */
+    addSubPass (subPass) {
+        if (typeof subPass != "function")
+            return;
+        this.subPass = subPass;
+    }
+    addAnimationChain (animations = {}) {
+        this.animationChain = animations;
+    }
+    /**
+     * 
+     * @param {ActivatedFunction} animation 
+     * @param {String} key 
+     */
+    addAnimationToChain (animation, key) {
+        if (!this.animationChain)
+            this.addAnimationChain();
+        this.animationChain[key] = animation;
+    }
+    swapAnimation (key) {
+        this.animation.deactivate();
+        let newAnimation = this.animationChain[key];
+        if (newAnimation instanceof ActivatedFunction)
+            this.animation.activate();
+    }
+    /**
+     * 
+     * @param {ActivatedFunction} mainFunction
+     */
+    addMainFunction (mainFunction) {
+        this.main = mainFunction;
+    }
+    /**
+     * 
+     * @param {{(sprite: Sprite): void}} activation 
+     * @param {{(sprite: Sprite): void}} deactivation
+     */
+    addActivation (activation = () => {}, deactivation = () => {}) {
+        if (typeof activation == "function" &&
+            typeof deactivation == "function") {
+                this.activation = activation;
+                this.deactivation = deactivation;
+            }
     }
 } 
 
