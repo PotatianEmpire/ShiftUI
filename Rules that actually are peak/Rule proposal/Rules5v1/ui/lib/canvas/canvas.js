@@ -18,14 +18,14 @@ let canvas = {
      * @param {*} y 
      * @param {*} reference 
      */
-    draw(sprite,x,y,reference){
+    draw(sprite,x,y,reference,depth){
         if(typeof sprite.activation == "function" &&
             typeof sprite.deactivation == "function")
             if (sprite.stateSwitched()) {
                 if (sprite.deactivated)
-                    sprite.deactivation();
+                    sprite.deactivation(sprite);
                 else
-                    sprite.activation();
+                    sprite.activation(sprite);
             }
         if (sprite.deactivated)
             return;
@@ -138,7 +138,6 @@ let canvas = {
                 offset += offsetAmount;
             })
         }
-        this.context.restore();
         if (typeof sprite.particleEmitter == "function" &&
             typeof sprite.particleIterator == "function"
         ) {
@@ -151,19 +150,20 @@ let canvas = {
         }
         if (typeof sprite.subPass == "function")
             sprite.subPass(sprite);
-        if (sprite.subSprites) {
-            this.render(sprite.subSprites,this.unscale(scaledX),this.unscale(scaledY),this.unscale(scaledWidth));
+        if (sprite.subSprites && depth < 100) {
+            this.render(sprite.subSprites,this.unscale(scaledX),this.unscale(scaledY),this.unscale(scaledWidth),depth);
         }
+        this.context.restore();
     },
     scale: (coord) => coord * canvas.width,
     localScale: (coord,reference) => coord * reference,
     unscale: (coord) => coord / canvas.width,
     localUnscale: (coord,reference) => coord / reference,
-    render (sprites,x = 0, y = 0, reference = 1.0) {
+    render (sprites,x = 0, y = 0, reference = 1.0, depth = 0) {
         
         for (const spriteKey of Object.keys(sprites)) {
             let sprite = sprites[spriteKey];
-            this.draw(sprite,x,y,reference)
+            this.draw(sprite,x,y,reference, depth + 1);
         }
     },
     renderArray (sprites,x = 0, y = 0, reference = 1.0) {
@@ -219,8 +219,8 @@ class ActivatedFunction {
      * @returns 
      */
     constructor (init = () => {},func = () => {}) {
-        if (typeof init == "function" &&
-            typeof func == "function")
+        if (typeof init != "function" ||
+            typeof func != "function")
             return;
         this.init = init;
         this.func = func;
@@ -249,7 +249,7 @@ class Sprite {
     height = 0;
     deactivated = false;
     stateSwitch = false;
-    constructor (x = 0,y = 0,width = 0,height = 0,subSprites = null) {
+    constructor (x = 0.5,y = 0.5,width = 0.5,height = 0.3,subSprites = null) {
         this.x = x;
         this.y = y;
         this.width = width;
@@ -257,7 +257,7 @@ class Sprite {
         if(subSprites)
             this.addSubsprites(subSprites)
     }
-    addText (text,textBoxHeightScale,align) {
+    addText (text,textBoxHeightScale = 1.0,align = "center") {
         this.text = text
         this.textBoxHeightScale = textBoxHeightScale;
         this.align = align;
@@ -286,7 +286,7 @@ class Sprite {
     appendAsSubSpriteTo (parentObject,key) {
         if (!parentObject.subSprites)
             parentObject.subSprites = {};
-        parentObject.subSprites[key] = key;
+        parentObject.subSprites[key] = this;
     }
     appendAsSpriteTo (parentObject) {
         for (const key of Object.keys(this)) {
@@ -336,6 +336,8 @@ class Sprite {
         this.subPass = subPass;
     }
     addAnimationChain (animations = {}) {
+        if (!this.animation)
+            this.addAnimation(new ActivatedFunction());
         this.animationChain = animations;
     }
     /**
@@ -344,6 +346,8 @@ class Sprite {
      * @param {String} key 
      */
     addAnimationToChain (animation, key) {
+        if (!this.animation)
+            this.addAnimation(animation);
         if (!this.animationChain)
             this.addAnimationChain();
         this.animationChain[key] = animation;

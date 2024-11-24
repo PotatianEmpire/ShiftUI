@@ -4,7 +4,7 @@ let start = Date.now();
 
 let stage = load.load;
 
-let testStage = startMenu.startMenuInit;
+let testStage = subSpriteTest.main;
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;

@@ -63,6 +63,17 @@ class Card extends ImageSprite {
     }
 }
 
+class Card extends Sprite {
+    constructor (sample,
+        onTurnAnimation,
+        idleAnimation,
+    ) {
+        super (0,0,1,4/3);
+        this.addImageSample()
+    }
+    constructShowCards () {}
+    constructIdle () {}
+}
 
 
 class Character extends Sprite {
