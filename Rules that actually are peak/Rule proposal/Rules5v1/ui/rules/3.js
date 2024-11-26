@@ -6,7 +6,7 @@ class Time {
     }
 
     time = () => this.lesser + this.larger;
-    speed = () => this.lesser;
+    speed = () => this.larger;
     looseTime = (time) => {
         this.lesser -= time;
         if (this.lesser <= 0) {

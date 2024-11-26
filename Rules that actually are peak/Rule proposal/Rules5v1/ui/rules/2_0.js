@@ -1,4 +1,4 @@
-class Card extends ImageSprite {
+class Card2 extends ImageSprite {
     /**
      * 
      * @param {Number} width 
@@ -63,7 +63,7 @@ class Card extends ImageSprite {
     }
 }
 
-class Card extends Sprite {
+class Card2 extends Sprite {
     constructor (sample,
         onTurnAnimation,
         idleAnimation,
@@ -73,6 +73,119 @@ class Card extends Sprite {
     }
     constructShowCards () {}
     constructIdle () {}
+}
+
+class Card extends Sprite {
+    /*
+    on turn a player must activate 1 card.
+    the activated card will be active until the next turn of that player.
+    a card has a defensive stat, which when activated will be your defending value against attacks.
+    a card has a offensive stat, with which you attack your opponent when the activated card expires.
+    if the opponents offensive stat exeeds your definsive stat your card corrupts and is placed to the back of your deck.
+    if a card expires without being corrupted the card is placed to the back of your deck.
+    corrupted card will have different kinds defensive/offensive stats.
+    corrupted cards will take away a turn from you and attack you.
+    losing to a corrupted card of your own will have the same effect as being attacked by an enemy.
+    winning against a corrupted card will uncorrupt the card and place in the back of your deck again.
+    if all cards in your hand get corrupted or you run out of time you die.
+    you win a battle by having no alive enemies left.
+    additionally onHand effects are activated when the card is placed onto the hand.
+    when activating a card time is spent and on expiry time is gained back.
+     */
+    mode = "normal";
+    active = false;
+    timeCost = 0;
+    timeGain = 0;
+    offenseStat = 0;
+    defenseStat = 0;
+    /** @type {Array<Character>} */
+    targets = [];
+
+    /**
+     * @param {Character} cardHolder 
+     * @param {Card} card 
+     */
+    activateable (cardHolder,card) {}
+    /**
+     * @param {Character} cardHolder 
+     * @param {Array<Character>} characters 
+     * @param {Card} card 
+     * @returns {Array<Character>}
+     */
+    targetting (cardHolder,characters,card) {}
+    /**
+     * @param {Character} cardHolder
+     * @param {Card} cardToBuff 
+     * @param {Card} card 
+     */
+    supportiveBuff (cardHolder,cardToBuff,card) {}
+    /**
+     * @param {Character} cardHolder
+     * @param {Card} card
+     */
+    activate (cardHolder,card) {}
+    /**
+     * @param {Character} cardHolder
+     * @param {Card} card
+     */
+    expire (cardHolder,card) {}
+    
+    
+}
+
+class Character extends Sprite {
+    cards = {
+        /** @type {Array<Card>} */
+        deck: [],
+        /** @type {Array<Card>} */
+        hand: []
+    }
+    /** @type {Time} */
+    time = null;
+
+    /**
+     * 
+     * @param {Array<Character>} characters 
+     */
+    onTurn (characters) {
+        // expire cards
+        this.expireCards();
+        // draw cards
+        this.drawCards();
+        // activate a chosen card
+        this.activate(choose(this.cards.hand.filter(card => card.activateable(this,card))));
+    }
+    expireCards () {
+        let expiredCards = this.cards.hand.filter(card => card.active);
+        expiredCards.forEach(card => {
+            this.cards.hand.forEach(buff => {
+                buff.supportiveBuff(this,card,buff);
+            })
+            card.expire(this,card);
+        });
+    }
+    drawCards () {
+        while (this.cards.hand.length < 4 && this.cards.deck.length > 0) {
+            this.cards.hand.push(this.cards.deck.shift());
+        }
+    }
+    /**
+     * 
+     * @param {Card} card 
+     */
+    activate (card) {
+        card.activate(this,card);
+    }
+    choose () {}
+    
+    
+    /**
+     * 
+     * @param {Array<Card>} cards
+     * @param {Array<Character>} characters 
+     * @returns {Card}
+     */
+    choose (cards,characters) {}
 }
 
 
@@ -154,9 +267,7 @@ class Character extends Sprite {
     time = null;
 
     subSprites = {
-        /** @type {Sprite} */
         onTurn: {},
-        ///** @type {Sprite} */
         cards: {
             /**
              * 
