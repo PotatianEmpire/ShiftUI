@@ -73,20 +73,6 @@ class Character extends Sprite {
                 } else {
                     thread.returnThread(true);
                 }
-
-                corruptedCard.corrupt(this.game,this);
-                corruptedCard.defend(this.game,this);
-                if (!corruptedCard.active)
-                    corruptedCard.moveToDeck = true;
-                this.hand.filter(card => {
-                    if (card.moveToDeck) {
-                        this.deckCard(card);
-                        return false;
-                    }
-                    return true;
-                })
-
-                return true;
             },
             (args,thread) => {
                 if (thread.variables.defended == true) {

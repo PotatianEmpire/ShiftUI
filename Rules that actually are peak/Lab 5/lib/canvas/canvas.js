@@ -22,10 +22,11 @@ let canvas = {
     draw(sprite,x,y,reference,depth){
         if(sprite.thread) {
             if(sprite.thread.origin) {
-                let nextFrame = {next: false};
+                const nextFrame = {next: false};
                 while (!nextFrame.next) {
                     if (sprite.thread.getNext(nextFrame)) {
                         nextFrame.next = true;
+                        sprite.thread.on = true;
                     };
                 }
             }
@@ -395,7 +396,9 @@ class Sprite {
      */
     addThread (thread) {
         this.thread = thread;
+        thread.parentSprite = this;
     }
+
 } 
 
 class Thread {
@@ -419,10 +422,13 @@ class Thread {
     nextFrame = false
     args = {}
     variables = {}
+    parentSprite = {};
     getNext(nextFrame) {
         if (this.on) { // if this thread should be executed
             if (this.next < this.functions.length) {    // if any functions on this thread are left to execute
                 this.functions[this.next](this.args,this);
+                nextFrame.next = this.nextFrame;
+                this.nextFrame = false;
                 this.next++;
             }
         } else if (this.lentTo) {
@@ -433,7 +439,6 @@ class Thread {
             this.returnThisThread = false;
         }
         this.returnThisThread = this.next >= this.functions.length || this.returnThisThread;    // return if no thread functions left to execute or the thread is telling to return
-        nextFrame.next = this.nextFrame;
         if (this.returnThisThread && this.on) { // returning a thread is only permitted to the thread that is on.
             this.next = 0;
             this.returnThisThread = false;
@@ -447,6 +452,7 @@ class Thread {
         this.lentTo = thread;
         thread.on = true;
         thread.args = args;
+        thread.lender = this;
         this.on = false;
     }
     returnThread (returnVal) {
@@ -459,6 +465,10 @@ class Thread {
     requestNextFrameAndLoop () {
         this.requestNextFrame();
         this.next --;
+    }
+    makeThreadOrigin () {
+        this.origin = true;
+        this.on = true;
     }
 }
 
