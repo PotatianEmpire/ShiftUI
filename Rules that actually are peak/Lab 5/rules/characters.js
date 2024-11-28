@@ -20,64 +20,98 @@ class Character extends Sprite {
         hand = [];
         deck = [];
 
-        clash (game,attackingCard,attacker) {
-            let uncorruptedCards = this.hand.filter(card => !card.corrupted);
+        game;
 
-            let activeCards = uncorruptedCards.filter(card => card.active);
-            let inactiveCards = uncorruptedCards.filter(card => !card.active);
+        clash = new Thread([
+            (args,thread) => {
+                attackingCard = args.attackingCard;
+                attacker = args.attacker;
 
-            let weakerInactiveCards = inactiveCards.filter(card => card.defensiveStat < attackingCard.offensiveStat);
+                let uncorruptedCards = this.hand.filter(card => !card.corrupted);
 
-            let strongerActiveCards = activeCards.filter(card => card.defensiveStat > attackingCard.offensiveStat);
+                let activeCards = uncorruptedCards.filter(card => card.active);
+                let inactiveCards = uncorruptedCards.filter(card => !card.active);
 
-            let weakerCorrupteableCards = uncorruptedCards.filter(card => card.defensiveStat < attackingCard.offensiveStat);
+                let weakerInactiveCards = inactiveCards.filter(card => card.defensiveStat < attackingCard.offensiveStat);
 
-            let corrupteableCardsInDeck = this.deck.filter(card => !card.corrupt);
+                let strongerActiveCards = activeCards.filter(card => card.defensiveStat > attackingCard.offensiveStat);
 
-            let weakerCorrupteableCardsInDeck = corrupteableCardsInDeck.filter(card => card.defensiveStat < attackingCard.offensiveStat);
+                let weakerCorrupteableCards = uncorruptedCards.filter(card => card.defensiveStat < attackingCard.offensiveStat);
 
-            if (strongerActiveCards > 0) {
-                return false;
-            }
+                let corrupteableCardsInDeck = this.deck.filter(card => !card.corrupt);
 
-            let corruptedCard;
+                let weakerCorrupteableCardsInDeck = corrupteableCardsInDeck.filter(card => card.defensiveStat < attackingCard.offensiveStat);
 
-            if (weakerInactiveCards.length > 0){
-                corruptedCard = attacker.chooseCardToCorrupt(weakerInactiveCards);
-            } else
-            if (weakerCorrupteableCards.length > 0) {
-                corruptedCard = attacker.chooseCardToCorrupt(weakerCorrupteableCards);
-            } else
-            if (weakerCorrupteableCardsInDeck.length > 0) {
-                corruptedCard = attacker.chooseCardToCorrupt(weakerCorrupteableCardsInDeck);
-            } else
-            if (corrupteableCardsInDeck.length > 0) {
-                corruptedCard = attacker.chooseCardToCorrupt(corrupteableCardsInDeck);
-            } else
-            if (uncorruptedCards.length > 0) {
-                corruptedCard = attacker.chooseCardToCorrupt(uncorruptedCards);
-            } else {
-                return true;
-            }
-
-            corruptedCard.corrupt();
-            if (!corruptedCard.active)
-                corruptedCard.moveToDeck = true;
-            this.hand.filter(card => {
-                if (card.moveToDeck) {
-                    this.deckCard(card);
-                    return false;
+                if (strongerActiveCards.length > 0) {
+                    thread.variables.defended = true;
+                    if (strongerActiveCards.length > 1) {
+                        thread.lendThread(this.chooseCard,strongerActiveCards);
+                    } else {
+                        thread.returnVal = strongerActiveCards[0];
+                    }
+                    return;
                 }
-                return true;
-            })
 
-            return true;
-            
-        }
-        expireCards (game) {
+                thread.variables.defended = false;
+
+                let corruptedCard;
+
+                if (weakerInactiveCards.length > 0){
+                    thread.lendThread(this.chooseCardToCorrupt,weakerInactiveCards);
+                } else
+                if (weakerCorrupteableCards.length > 0) {
+                    thread.lendThread(this.chooseCardToCorrupt,weakerCorrupteableCards);
+                } else
+                if (weakerCorrupteableCardsInDeck.length > 0) {
+                    thread.lendThread(this.chooseCardToCorrupt,weakerCorrupteableCardsInDeck);
+                } else
+                if (corrupteableCardsInDeck.length > 0) {
+                    thread.lendThread(this.chooseCardToCorrupt,corrupteableCardsInDeck);
+                } else
+                if (uncorruptedCards.length > 0) {
+                    thread.lendThread(this.chooseCardToCorrupt,uncorruptedCards);
+                } else {
+                    thread.returnThread(true);
+                }
+
+                corruptedCard.corrupt(this.game,this);
+                corruptedCard.defend(this.game,this);
+                if (!corruptedCard.active)
+                    corruptedCard.moveToDeck = true;
+                this.hand.filter(card => {
+                    if (card.moveToDeck) {
+                        this.deckCard(card);
+                        return false;
+                    }
+                    return true;
+                })
+
+                return true;
+            },
+            (args,thread) => {
+                if (thread.variables.defended == true) {
+                    let defendingCard = args;
+                    defendingCard.defend(this.game,this);
+                    thread.returnThread(false);
+                } else {
+                    let corruptedCard = args;
+                    corruptedCard.corrupt(this.game,this);
+                    corruptedCard.defend(this.game,this);
+                    if (!corruptedCard.active)
+                        corruptedCard.moveToDeck = true;
+                    this.hand.filter(card => {
+                        if (card.moveToDeck) {
+                            this.deckCard(card);
+                        }
+                    })
+                }
+            }
+        ])
+        
+        expireCards () {
             this.hand = this.hand.filter(card => {
                 if (card.active) {
-                    card.expire(game,this);
+                    card.expire(this.game,this);
                     this.deckCard(card);
                     return false;
                 }
@@ -85,6 +119,7 @@ class Character extends Sprite {
             });
         }
         deckCard (card) {
+            this.game.queueAnimation ();
             this.deck.unshift(card);
         }
         drawCards () {
@@ -98,10 +133,16 @@ class Character extends Sprite {
             }
             return false;
         }
-        activateCard (game) {
-            let chosenCard = this.chooseCard(this.hand.filter(card => card.activateable()))
+        activateCard () {
+            let chosenCard = this.chooseCard(this.hand.filter(card => card.activateable(this.game,this)));
+            chosenCard.activateCard(this.game,this);
         }
 
-        chooseCard (cards) {}
+        chooseCard = new Thread ();
+        chooseCardToCorrupt = new Thread ();
 
 }
+
+let ConstructCharacter = (
+
+) => {}

@@ -11,6 +11,7 @@ let canvas = {
      * @type {CanvasRenderingContext2D}
      */
     context: document.getElementById("view").getContext("2d"),
+    
     /**
      * 
      * @param {Sprite} sprite 
@@ -19,6 +20,16 @@ let canvas = {
      * @param {*} reference 
      */
     draw(sprite,x,y,reference,depth){
+        if(sprite.thread) {
+            if(sprite.thread.origin) {
+                let nextFrame = {next: false};
+                while (!nextFrame.next) {
+                    if (sprite.thread.getNext(nextFrame)) {
+                        nextFrame.next = true;
+                    };
+                }
+            }
+        }
         if(typeof sprite.activation == "function" &&
             typeof sprite.deactivation == "function")
             if (sprite.stateSwitched()) {
@@ -377,7 +388,79 @@ class Sprite {
                 this.deactivation = deactivation;
             }
     }
+    
+    /**
+     * 
+     * @param {Thread} thread 
+     */
+    addThread (thread) {
+        this.thread = thread;
+    }
 } 
+
+class Thread {
+
+    /**
+     * 
+     * @param {Array<{(args: Object,thread: Thread): void}>} functions 
+     */
+    constructor (functions) {
+        this.functions = functions;
+    }
+
+    origin = false
+    on = false
+    next = 0
+    functions = []
+    lentTo = null
+    returnVal = {}
+    lender = null
+    returnThisThread = false
+    nextFrame = false
+    args = {}
+    variables = {}
+    getNext(nextFrame) {
+        if (this.on) { // if this thread should be executed
+            if (this.next < this.functions.length) {    // if any functions on this thread are left to execute
+                this.functions[this.next](this.args,this);
+                this.next++;
+            }
+        } else if (this.lentTo) {
+            this.on = this.lentTo.getNext(nextFrame);
+            this.returnThisThread = false;
+        } else {
+            this.on = true;
+            this.returnThisThread = false;
+        }
+        this.returnThisThread = this.next >= this.functions.length || this.returnThisThread;    // return if no thread functions left to execute or the thread is telling to return
+        nextFrame.next = this.nextFrame;
+        if (this.returnThisThread && this.on) { // returning a thread is only permitted to the thread that is on.
+            this.next = 0;
+            this.returnThisThread = false;
+            this.nextFrame = false;
+            this.on = false;
+            return true;
+        }
+        return false;
+    }
+    lendThread (thread,args) {
+        this.lentTo = thread;
+        thread.on = true;
+        thread.args = args;
+        this.on = false;
+    }
+    returnThread (returnVal) {
+        this.lender.returnVal = returnVal;
+        this.returnThisThread = true;
+    }
+    requestNextFrame () {
+        this.nextFrame = true;
+    }
+    requestNextFrameAndLoop () {
+        this.requestNextFrame();
+        this.next --;
+    }
+}
 
 class Sample {
     constructor (image,sampleX,sampleY,sampleWidth,sampleHeight) {
