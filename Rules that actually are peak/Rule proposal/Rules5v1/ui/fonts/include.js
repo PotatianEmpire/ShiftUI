@@ -8,3 +8,5 @@ let loadFonts = () => {
     document.fonts.add(fonts.DEADCRT);
     document.fonts.add(fonts.vinque_rg);
 }
+
+console.log(fonts.DEADCRT.family);

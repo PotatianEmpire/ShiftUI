@@ -259,7 +259,7 @@ class Sprite {
     y = 0;
     width = 0;
     height = 0;
-    deactivated = false;
+    deactivated = true;
     stateSwitch = false;
     constructor (x = 0.5,y = 0.5,width = 0.5,height = 0.3,subSprites = null) {
         this.x = x;
@@ -399,6 +399,31 @@ class Sprite {
         thread.parentSprite = this;
     }
 
+    /**
+     * 
+     * @param {{(sprite: Sprite,
+     * mediaInterface: {
+     *  images: {
+     *      request: {(image: object,src: String): void},
+     *      request: {(image: object): void},
+     *      loadProgress: {(image: object): void},
+     *      loadProgress: {(): void},
+     *  },
+     *  audio: {
+     *      request: {(audio: object,src: String): void},
+     *      loadProgress: {(audio: object): void},
+     *      loadProgress: {(): void},
+     *  },
+     *  fonts: {
+     *      request: {(font: object,src: String): void},
+     *      loadProgress: {(font: object): void},
+     *      loadProgress: {(): void},
+     *  }
+     * }): void}} constructor 
+     */
+    addConstructor (constructor) {
+        this.constructor = constructor;
+    }
 } 
 
 class Thread {

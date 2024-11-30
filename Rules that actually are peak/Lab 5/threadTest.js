@@ -1,4 +1,4 @@
-let fps = 1;
+// let fps = 1;
 
 let sprites = {
     testSprite: new Sprite()
@@ -54,8 +54,8 @@ function init () {
 
 init()
 
-setInterval(() => {
-    canvas.clear();
-    canvas.render(sprites);
-    console.log("render complete")
-},1000/fps);
+// setInterval(() => {
+//     canvas.clear();
+//     canvas.render(sprites);
+//     console.log("render complete")
+// },1000/fps);

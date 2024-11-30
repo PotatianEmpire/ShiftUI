@@ -1,3 +1,5 @@
+
+
 let load = {
     sprites: {},
     load: () => {

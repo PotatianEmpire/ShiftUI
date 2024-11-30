@@ -90,6 +90,7 @@ class Character extends Sprite {
                             this.deckCard(card);
                         }
                     })
+                    thread.returnThread(true);
                 }
             }
         ])
