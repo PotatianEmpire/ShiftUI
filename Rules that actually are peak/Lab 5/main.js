@@ -1,44 +1,50 @@
 let lab5 = {
-    main: {
-        constructor () {
-            let main = new Sprite ();
+    sprites: {
+        view: {                                     // < -- construct this sprite to initialize and start the program
 
-            let mainThread = new Thread ([
-                (args,thread) => {
-                    
-                }
-            ])
+            subSprites: {
+                menu: {
 
-            main.addThread()
-        }
+                    subSprites: {
+                        settings: {
+
+                            constructor() {},
+                            thread: new Thread(),   // < -- move to this thread whenever you want to display the settings
+                            subSprites: {
+                                visual: {},
+                                audio: {},
+                                keybinds: {},
+                                return: {}          // when this button is pressed the thread is returned
+                            }
+                        }
+                    }
+                },
+                ui: {},
+                game: {}
+            }
+        },
     },
-    view: {
-        subSprites: {
-            game: {},
-            menu: {},
-            ui: {}
-        }
+    images: {
+
     },
-    loadingScreen: {
-        subSprites: {
-            progress: {}
-        }
+    audio: {
+
+    },
+    fonts: {
+
     }
 }
 
 
 function init () {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
     
-    constructor.construct(lab5.main);
-    constructor.construct(lab5.view);
-    constructor.construct(lab5.loadingScreen);
+    lab5.sprites.view.subSprites.menu.subSprites.settings.thread.returnThisThread
+
 }
 
 function main () {
     canvas.clear();
-    canvas.render(game);
+    // canvas.render(lab5.sprites);
 }
 
 let fps = 60;

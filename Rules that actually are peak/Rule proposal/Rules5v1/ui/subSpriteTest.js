@@ -29,7 +29,7 @@ let subSpriteTest = {
         )
 
         spinningImage.appendAsSubSpriteTo(parentSprite,"spinningImage");
-        spinningImage.appendAsSubSpriteTo(spinningImage,"spinningImgage");
+        spinningImage.appendAsSubSpriteTo(spinningImage,"spinningImage");
 
         this.sprites.parentSprite.deactivated = true;
         this.sprites.parentSprite.activate();

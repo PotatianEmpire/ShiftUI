@@ -49,11 +49,18 @@ let canvas = {
             }
         }
         if(sprite.animation instanceof ActivatedFunction) {
-            if(sprite.animation.active) {
-                if(sprite.animation.wasActivated())
-                    sprite.animation.init(sprite);
-                sprite.animation.func(sprite);
+            if (sprite.animation.active &&
+                !sprite.animation.paused &&
+                sprite.animation.timeout < 1 &&
+                sprite.animation.frame % sprite.animation.interval == 0) {
+                if (sprite.animation.wasActivated ()) {
+                    sprite.animation.init(sprite,sprite.animation);
+                }
+                sprite.animation.func(sprite,sprite.animation);
+                sprite.animation.timeout--;
             }
+            if (!sprite.animation.paused)
+                sprite.animation.frame++;
         }
         if (!sprite.x)
             sprite.x = 0;
@@ -162,7 +169,7 @@ let canvas = {
         }
         if (typeof sprite.subPass == "function")
             sprite.subPass(sprite);
-        if (sprite.subSprites && depth < 100) {
+        if (sprite.subSprites && sprite.subSpritesDeactivated && depth < 100) {
             this.render(sprite.subSprites,this.unscale(scaledX),this.unscale(scaledY),this.unscale(scaledWidth),depth);
         }
         this.context.restore();
@@ -226,11 +233,11 @@ let canvas = {
 class ActivatedFunction {
     /**
      * 
-     * @param {{(sprite: Sprite) : void}} init 
-     * @param {{(sprite: Sprite) : void}} func 
+     * @param {{(sprite: Sprite, animationProperties: ActivatedFunction) : void}} init 
+     * @param {{(sprite: Sprite, animationProperties: ActivatedFunction) : void}} func 
      * @returns 
      */
-    constructor (init = () => {},func = () => {}) {
+    constructor (init = () => {}, func = () => {}) {
         if (typeof init != "function" ||
             typeof func != "function")
             return;
@@ -239,6 +246,8 @@ class ActivatedFunction {
     }
     active = false;
     stateSwitch = false;
+    paused = false;
+    frame = 0;
     activate () {
         this.stateSwitch = !this.active;
         this.active = true;
@@ -251,6 +260,18 @@ class ActivatedFunction {
         let ret = this.stateSwitch;
         this.stateSwitch = false;
         return ret;
+    }
+    setFrameInterval (interval) {
+        this.interval = interval;
+    }
+    pause () {
+        this.paused = true;
+    }
+    setTimeout (time) {
+        this.timeout = time;
+    }
+    unpause () {
+        this.paused = false;
     }
 }
 
@@ -303,6 +324,7 @@ class Sprite {
     appendAsSpriteTo (parentObject) {
         for (const key of Object.keys(this)) {
             parentObject[key] = this[key];
+            Object.setPrototypeOf(parentObject,Sprite);
         }
     }
     /**
@@ -367,8 +389,10 @@ class Sprite {
     swapAnimation (key) {
         this.animation.deactivate();
         let newAnimation = this.animationChain[key];
-        if (newAnimation instanceof ActivatedFunction)
+        if (newAnimation instanceof ActivatedFunction) {
+            this.animation = this.animationChain[key];
             this.animation.activate();
+        }
     }
     /**
      * 
@@ -399,31 +423,27 @@ class Sprite {
         thread.parentSprite = this;
     }
 
-    /**
-     * 
-     * @param {{(sprite: Sprite,
-     * mediaInterface: {
-     *  images: {
-     *      request: {(image: object,src: String): void},
-     *      request: {(image: object): void},
-     *      loadProgress: {(image: object): void},
-     *      loadProgress: {(): void},
-     *  },
-     *  audio: {
-     *      request: {(audio: object,src: String): void},
-     *      loadProgress: {(audio: object): void},
-     *      loadProgress: {(): void},
-     *  },
-     *  fonts: {
-     *      request: {(font: object,src: String): void},
-     *      loadProgress: {(font: object): void},
-     *      loadProgress: {(): void},
-     *  }
-     * }): void}} constructor 
-     */
-    addConstructor (constructor) {
-        this.constructor = constructor;
+    subSpritesDeactivated = false;
+
+    activateSubSprites () {
+        if (!this.subSprites)
+            return;
+        for (const key in this.subSprites) {
+            this.subSprites[key].activate();
+        }
+        this.subSpritesDeactivated = false;
     }
+
+    deactivateSubSprites () {
+        if (!this.subSprites)
+            return;
+        for (const key in this.subSprites) {
+            this.subSprites[key].deactivate();
+        }
+        this.subSpritesDeactivated = true;
+    }
+
+
 } 
 
 class Thread {
