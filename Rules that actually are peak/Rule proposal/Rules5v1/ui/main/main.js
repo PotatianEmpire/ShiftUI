@@ -1,4 +1,4 @@
-let fps = 60;
+let fps = 5;
 let frames = 1;
 let start = Date.now();
 

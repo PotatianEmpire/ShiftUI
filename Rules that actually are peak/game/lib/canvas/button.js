@@ -1,12 +1,4 @@
 
-/**
- * @deprecated
- * @param {Sprite} sprite 
- * @param {{() : void}} onHover 
- * @param {{() : void}} onClick 
- * @param {{() : void}} def 
- * @returns 
- */
 let createButton = (sprite,onHover,onClick,def) => {
     if (typeof onHover != "function" &&
         typeof onClick != "function" &&

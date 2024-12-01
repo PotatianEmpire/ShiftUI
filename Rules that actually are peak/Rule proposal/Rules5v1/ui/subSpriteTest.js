@@ -1,6 +1,6 @@
 let subSpriteTest = {
     sprites: {
-        parentSprite: new ImageSprite (0.5,0.5,0.5,0.5,images.cardTest)
+        parentSprite: new ImageSprite (0.5,0.3,0.5,0.5,images.cardTest)
     },
     constructParentSprite () {
         let parentSprite = this.sprites.parentSprite;

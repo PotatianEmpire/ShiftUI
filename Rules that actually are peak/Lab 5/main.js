@@ -1,16 +1,18 @@
-
-
-
 function init () {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
+    constructLab5();
 }
+
 
 function main () {
     canvas.clear();
-    canvas.render();
+    console.log("----- new frame -----");
+    canvas.render(lab5);
 }
 
-let fps = 60;
+let fps = 1;
 
 init();
 setInterval(() => {

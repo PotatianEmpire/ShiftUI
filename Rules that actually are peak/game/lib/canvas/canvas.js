@@ -17,8 +17,7 @@ let canvas = {
      * @param {Sprite} sprite 
      * @param {*} x 
      * @param {*} y 
-     * @param {*} reference
-     * @param {Number} depth recursion depth starting point for subSprites (max recursion depth = 100)
+     * @param {*} reference 
      */
     draw(sprite,x,y,reference,depth){
         if(sprite.thread) {
@@ -152,8 +151,6 @@ let canvas = {
                     text = valArr.join("\"");
                 }
                 this.context.fillText(text,scaledX,scaledY + offset);
-                console.log(`x ${scaledX}, y ${scaledY}`);
-                console.log(`width ${scaledWidth}, height ${scaledHeight}`)
                 if (!sprite.textBoxHeightScale)
                     sprite.textBoxHeightScale = 1.1
                 let offsetAmount = style.fontSize * sprite.textBoxHeightScale;
@@ -181,14 +178,6 @@ let canvas = {
     localScale: (coord,reference) => coord * reference,
     unscale: (coord) => coord / canvas.width,
     localUnscale: (coord,reference) => coord / reference,
-    /**
-     * 
-     * @param {*} sprites 
-     * @param {*} x 
-     * @param {*} y 
-     * @param {*} reference
-     * @param {Number} depth recursion depth starting point for subSprites (max recursion depth = 100)
-     */
     render (sprites,x = 0, y = 0, reference = 1.0, depth = 0) {
         
         for (const spriteKey of Object.keys(sprites)) {
@@ -217,7 +206,7 @@ let canvas = {
     mouseOn (sprite) {
         this.mouseOnRel(sprite,0,0,1);
     },
-    mouseOnRel (sprite,x = 0,y = 0,reference = 1) {
+    mouseOnRel (sprite,x,y,reference) {
         let scaledX = this.localScale(sprite.x,reference) + x;
         let scaledY = this.localScale(sprite.y,reference) + y;
         let scaledWidth = this.localScale(sprite.width,reference);
@@ -299,7 +288,7 @@ class Sprite {
     height = 0;
     deactivated = true;
     stateSwitch = false;
-    constructor (x = 0.5,y = 0.3,width = 0.5,height = 0.3,subSprites = null) {
+    constructor (x = 0.5,y = 0.5,width = 0.5,height = 0.3,subSprites = null) {
         this.x = x;
         this.y = y;
         this.width = width;
