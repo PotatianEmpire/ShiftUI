@@ -9,6 +9,8 @@ To share information you can use some of the following techniques:
 ```js
 
 let sprites = {
+    
+    main: {},
 
     someSprite: {
 
@@ -17,8 +19,6 @@ let sprites = {
 
     },
 
-    main: {},
-
     commonDirectories: {
         information: "shared information"
     }
@@ -26,41 +26,49 @@ let sprites = {
 }
 
 function constructSomeSprite () {
-    let sprite = new Sprite();
+    let sprite = new Sprite();  // creating a sprite separately keeps things nice and short.
 
     sprite.addThread(new Thread([
-        (args,thread) => {
+        (thread) => {
+            sprite.text = `"changed"`;
+            sprite.activate();
             console.log("thread called");
             console.log("shared local properties: " + sprites.someSprite.shared);
             console.log("info from shared directories: " + sprites.commonDirectories.information);
-            console.log("thread parameters: " + args);
+            console.log("thread parameters: " + thread.args);
             thread.returnThread("return information");
         }
     ]))
 
     sprite.addText (`"this text should not be edited by other sprites"`);
 
-    sprite.appendAsSpriteTo(sprites.someSprite);
+    sprites.someSprite = sprite.fuseSprite(sprites.someSprite); // the fuseSprite functions smashes the parentSprite onto the main sprite.
+                                                                // for duplicate properties the properties of the parentSprite are discarded.
 }
 
 function constructMain () {
     let sprite = new Sprite();
 
     sprite.addThread(new Thread([
-        (args,thread) => {
+        (thread) => {
             thread.lendThread(sprites.someSprite.thread,"input");
         },
-        (args,thread) => {
+        (thread) => {
             console.log("returned information: " + thread.returnVal);
         }
     ]))
     sprite.thread.makeThreadOrigin()
 
-    sprite.appendAsSpriteTo(sprites.main);
+    sprites.main = sprite.fuseSprite(sprites.main);
 }
 
 constructSomeSprite ();
 constructMain ();
 
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+canvas.clear();
 canvas.render(sprites);
+
 ```

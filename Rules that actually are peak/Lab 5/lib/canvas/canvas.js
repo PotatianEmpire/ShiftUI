@@ -321,11 +321,14 @@ class Sprite {
             parentObject.subSprites = {};
         parentObject.subSprites[key] = this;
     }
-    appendAsSpriteTo (parentObject) {
-        for (const key of Object.keys(this)) {
-            parentObject[key] = this[key];
-            Object.setPrototypeOf(parentObject,Sprite);
+    fuseSprite (parentObject) {
+        let temp = parentObject;
+        for (const key of Object.keys(temp)) {
+            if (!this[key])
+                this[key] = temp[key];
         }
+        Object.setPrototypeOf(parentObject,Sprite.prototype);
+        return this;
     }
     /**
      * 
@@ -420,7 +423,7 @@ class Sprite {
      */
     addThread (thread) {
         this.thread = thread;
-        thread.parentSprite = this;
+        this.thread.parentSprite = this;
     }
 
     subSpritesDeactivated = false;
@@ -450,7 +453,7 @@ class Thread {
 
     /**
      * 
-     * @param {Array<{(args: Object,thread: Thread): void}>} functions 
+     * @param {Array<{(thread: Thread): void}>} functions 
      */
     constructor (functions) {
         this.functions = functions;
@@ -467,11 +470,10 @@ class Thread {
     nextFrame = false
     args = {}
     variables = {}
-    parentSprite = {};
     getNext(nextFrame) {
         if (this.on) { // if this thread should be executed
             if (this.next < this.functions.length) {    // if any functions on this thread are left to execute
-                this.functions[this.next](this.args,this);
+                this.functions[this.next](this);
                 nextFrame.next = this.nextFrame;
                 this.nextFrame = false;
                 this.next++;
