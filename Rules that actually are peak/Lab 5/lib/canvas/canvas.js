@@ -545,9 +545,11 @@ class Thread {
     requestNextFrame () {
         this.nextFrame = true;
     }
-    requestNextFrameAndLoop () {
+    requestNextFrameAndLoop (steps = 1) {
+        if (this.next - steps < 0 || this.functions.length - 1 < this.next - steps)
+            return;
+        this.next -= steps;
         this.requestNextFrame();
-        this.next --;
     }
     makeThreadOrigin () {
         this.origin = true;

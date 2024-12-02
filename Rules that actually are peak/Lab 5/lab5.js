@@ -1,5 +1,5 @@
 let lab5 = {
-    game: {
+    main: {
         thread: new Thread(),
 
         subSprites: {
@@ -10,20 +10,25 @@ let lab5 = {
                 thread: new Thread()
             },
             menu: {
+                thread: new Thread()
+            },
+            game: {
                 thread: new Thread(),
-
-                subSprites: {
-                    game: {}
-                }
+                scene: {}
             },
             settings: {
-                thread: new Thread(),
-
-                subSprites: {
-
-                }
+                thread: new Thread()
             }
         }
+    }
+}
+
+let gameInfo = {
+    playerInfo: {
+        characters: {}
+    },
+    game: {
+        scenes: {}
     }
 }
 
@@ -34,30 +39,31 @@ let media = {
 }
 
 function constructLab5 () {
-    constructGame();
+    constructMain();
     constructTitleScreen();
     constructLoad();
     constructMenu();
+    constructGame();
 }
 
-function constructGame () {
+function constructMain () {
     let sprite = new Sprite();
     let thread = new Thread([
         () => {
-            sprite.y = canvas.referenceHeight /2;
+            sprite.y = canvas.referenceHeight / 2;
             sprite.activate();
         },
         () => {
             console.log("titel screen!");
-            thread.lendThread(lab5.game.subSprites.titleScreen.thread);
+            thread.lendThread(lab5.main.subSprites.titleScreen.thread);
         },
         () => {
             console.log("load!");
-            thread.lendThread(lab5.game.subSprites.load.thread);
+            thread.lendThread(lab5.main.subSprites.load.thread);
         },
         () => {
             console.log("menu!");
-            thread.lendThread(lab5.game.subSprites.menu.thread);
+            thread.lendThread(lab5.main.subSprites.menu.thread);
         }
     ])
     thread.makeThreadOrigin();
@@ -68,7 +74,7 @@ function constructGame () {
 
 
     sprite.addThread(thread);
-    lab5.game = sprite.fuseSprite(lab5.game);
+    lab5.main = sprite.fuseSprite(lab5.main);
 }
 
 function constructTitleScreen () {
@@ -98,9 +104,9 @@ function constructTitleScreen () {
     sprite.y = 0;
     sprite.align = "center"
 
-    
+
     sprite.addThread(thread);
-    lab5.game.subSprites.titleScreen = sprite.fuseSprite(lab5.game.subSprites.titleScreen);
+    lab5.main.subSprites.titleScreen = sprite.fuseSprite(lab5.main.subSprites.titleScreen);
 }
 
 function constructLoad () {
@@ -122,7 +128,7 @@ function constructLoad () {
 
 
     sprite.addThread(thread); 
-    lab5.game.subSprites.load = sprite.fuseSprite(lab5.game.subSprites.load);
+    lab5.main.subSprites.load = sprite.fuseSprite(lab5.main.subSprites.load);
 }
 
 function constructMenu () {
@@ -130,10 +136,137 @@ function constructMenu () {
     let thread = new Thread([
         () => {
             console.log("menu...");
+
+            
         }
     ])
 
 
     sprite.addThread(thread);
-    lab5.game.subSprites.menu = sprite.fuseSprite(lab5.game.subSprites.menu);
+    lab5.main.subSprites.menu = sprite.fuseSprite(lab5.main.subSprites.menu);
+}
+
+function constructGame () {
+    let sprite = new Sprite();
+    let subSprites = {
+        characterSelection: {
+            thread: new Thread(),
+            selectedCharacters: []
+        },
+        load: {
+            thread: new Thread()
+        },
+        level: {
+            thread: new Thread(),
+            done: false,
+            playerIsWinner: false,
+        },
+        winScreen: {
+            thread: new Thread()
+        },
+        defeatScreen: {
+            thread: new Thread()
+        }
+    }
+    let thread = new Thread ([
+        () => {
+            thread.lendThread(subSprites.characterSelection);
+        },
+        () => {
+            thread.lendThread(subSprites.load);
+        },
+        () => {
+            thread.lendThread(subSprites.level);
+            if (subSprites.level.done) {
+                return;
+            }
+            thread.requestNextFrameAndLoop();
+        },
+        () => {
+            if (subSprites.level.playerIsWinner) {
+                thread.lendThread(subSprites.winScreen);
+            } else {
+                thread.lendThread(subSprites.defeatScreen);
+            }
+        }
+    ])
+
+    function constructLevel (fusion) {
+        let sprite = new Sprite();
+        let subSprites =  {
+            ui: {
+                subSprites: {
+                    chooseCard: {
+                        character: {},
+                        thread: new Thread()
+                    },
+                    showCharacterDetails: {
+                        character: {},
+                        thread: new Thread()
+                    }
+                }
+            },
+            scene: {
+                thread: new Thread()
+            },
+            pause: {
+                thread: new Thread()
+            }
+        }
+    
+        let spriteMethods = {
+            winnerDecided (characters) {},
+            getAliveCharacters (characters) {},
+            getQuickestCharacter (characters) {}
+        }
+    
+        let thread = new Thread([
+            () => {
+                thread.lendThread(subSprites.scene);
+            },
+            () => {
+                let characters = lab5.main.subSprites.game.characters;
+                if (spriteMethods.winnerDecided(characters))
+                    return;
+                let aliveCharacters = spriteMethods.getAliveCharacters(characters)
+                let quickestCharacter = spriteMethods.getQuickestCharacter(aliveCharacters);
+    
+            }
+        ])
+    
+        sprite.addSubsprites(subSprites);
+        sprite.addThread(thread);
+        sprite.fuseSprite(spriteMethods);
+        return sprite.fuseSprite(fusion);
+    }
+
+    subSprites.level = constructLevel(subSprites.level);
+
+}
+
+
+
+function constructUI () {
+
+}
+
+function constructChooseCard () {
+
+}
+
+function constructScene () {
+
+}
+
+function constructPause () {}
+
+function constructShowCharacterDetails () {}
+
+function constructSettings () {
+    let subSprites = {
+        graphics: {},
+        audio: {},
+        gameplay: {},
+        keybinds: {}
+    }
 }
