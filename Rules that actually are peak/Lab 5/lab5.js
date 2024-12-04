@@ -168,6 +168,8 @@ function constructGame () {
             thread: new Thread()
         }
     }
+    let scene = lab5.main.subSprites.game.scene;
+    let selectedCharacters = subSprites.characterSelection.selectedCharacters;
     let thread = new Thread ([
         () => {
             thread.lendThread(subSprites.characterSelection);
@@ -215,22 +217,40 @@ function constructGame () {
         }
     
         let spriteMethods = {
+            pauseGameAnimationSmooth () {},
+            unpauseGameAnimationSmooth () {},
+            blockingAnimationDone () {},
             winnerDecided (characters) {},
+            getWinners (characters) {},
             getAliveCharacters (characters) {},
             getQuickestCharacter (characters) {}
         }
+
     
         let thread = new Thread([
             () => {
                 thread.lendThread(subSprites.scene);
             },
             () => {
-                let characters = lab5.main.subSprites.game.characters;
-                if (spriteMethods.winnerDecided(characters))
+                if (sprite.blockingAnimationDone()) {
                     return;
-                let aliveCharacters = spriteMethods.getAliveCharacters(characters)
-                let quickestCharacter = spriteMethods.getQuickestCharacter(aliveCharacters);
-    
+                }
+                thread.requestNextFrameAndLoop();
+            },
+            () => {
+                if (spriteMethods.winnerDecided()) {
+                    thread.returnThread();
+                    return;
+                }
+                
+            },
+            () => {
+                if (quickestCharacter.controlleable) {
+                    subSprites.ui.subSprites.chooseCard.character = quickestCharacter;
+                    thread.lendThread(subSprites.ui.subSprites.chooseCard.thread);
+                } else {
+                    quickestCharacter.ai.chooseCardToActivate();
+                }
             }
         ])
     

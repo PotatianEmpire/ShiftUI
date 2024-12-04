@@ -22,7 +22,7 @@ let canvas = {
      */
     draw(sprite,x,y,reference,depth){
         if(sprite.thread) {
-            if(sprite.thread.origin) {
+            if(sprite.thread.origin && !sprite.thread.paused) {
                 const nextFrame = {next: false};
                 while (!nextFrame.next) {
                     if (sprite.thread.getNext(nextFrame)) {
@@ -497,10 +497,12 @@ class Thread {
 
     origin = false
     on = false
+    paused = false
     next = 0
     functions = []
     lentTo = null
     returnVal = {}
+    /** @type {Thread} */
     lender = null
     returnThisThread = false
     nextFrame = false
@@ -545,15 +547,39 @@ class Thread {
     requestNextFrame () {
         this.nextFrame = true;
     }
-    requestNextFrameAndLoop (steps = 1) {
+    requestNextFrameAndLoop (steps = 0) {
         if (this.next - steps < 0 || this.functions.length - 1 < this.next - steps)
             return;
-        this.next -= steps;
+        this.next += steps - 1;
         this.requestNextFrame();
     }
     makeThreadOrigin () {
         this.origin = true;
         this.on = true;
+    }
+    pause () {
+        if (!this.lender) {
+            this.paused = true;
+            this.requestNextFrame()
+            return;
+        }
+        if (this.origin)
+            this.paused = true;
+        else
+            this.lender.pause();
+        this.requestNextFrame()
+    }
+    resume () {
+        if (!this.lender) {
+            this.paused = false;
+            this.requestNextFrame()
+            return;
+        }
+        if (this.origin)
+            this.paused = false;
+        else
+            this.lender.resume();
+        this.requestNextFrame()
     }
 }
 
