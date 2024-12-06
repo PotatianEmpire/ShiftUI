@@ -1,6 +1,9 @@
 
 
-
+// Might look messy but isn't because it isn't confusing and I can comfortably code and find bugs.
+// If you code for aesthetics you have a problem.
+// You should define clean code by how easy it is to finde bugs and develop further.
+// In that definition this code is perfectly clean.
 
 let canvas = {
 
