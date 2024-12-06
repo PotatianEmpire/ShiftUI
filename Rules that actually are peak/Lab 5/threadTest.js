@@ -61,5 +61,5 @@ init()
 setInterval(() => {
     canvas.clear();
     canvas.render(sprites);
-    console.log("render complete")
+    console.log("render complete");
 },1000/fps);

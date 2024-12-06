@@ -6,9 +6,18 @@ let mediaInterface = {
     images: {
         request(image,src) {
             image.src = src;
+            image.loaded = false;
             image.addEventListener("load", () => {
                 image.loaded = true;
             })
+        },
+        reqeustSamples(samples,image,src) {
+            this.request(image,src);
+            for (const key in samples) {
+                if(samples[key] instanceof Sample){
+                    samples[key].img = image;
+                }
+            }
         },
         unload(image) {
             image.unloadedSrc = image.src
@@ -27,11 +36,11 @@ let mediaInterface = {
                     loaded += images[key].loaded ? 1:0
                 } else if (typeof images[key] == "object") {
                     let innerObject = this.loadProgress(images[key]);
-                    imagesLength += innerObject.imagesLength;
+                    imagesLength += innerObject.length;
                     loaded += innerObject.loaded;
                 } 
             }
-            return {loaded: loaded,length: imagesLength,percentage: (loaded * 100)/imagesLength};
+            return {loaded: loaded,length: imagesLength,percentage: (loaded * 100)/imagesLength,finished: loaded == imagesLength};
         }
     },
     audio: {

@@ -327,7 +327,7 @@ class Sprite {
             this.particles = [];
         }
     }
-    addSubsprites (subSprites) {
+    addSubsprites (subSprites = {}) {
         this.subSprites = subSprites;
     }
     addTransparency (transparency) {
@@ -506,6 +506,7 @@ class Thread {
     lender = null
     returnThisThread = false
     nextFrame = false
+    autoResetNext = true;
     args = {}
     variables = {}
     getNext(nextFrame) {
@@ -525,13 +526,17 @@ class Thread {
         }
         this.returnThisThread = this.next >= this.functions.length || this.returnThisThread;    // return if no thread functions left to execute or the thread is telling to return
         if (this.returnThisThread && this.on) { // returning a thread is only permitted to the thread that is on.
-            this.next = 0;
+            if (this.autoResetNext)
+                this.resetNext();
             this.returnThisThread = false;
             this.nextFrame = false;
             this.on = false;
             return true;
         }
         return false;
+    }
+    resetNext (next = 0) {
+        this.next = next;
     }
     lendThread (thread,args) {
         this.lentTo = thread;
@@ -584,12 +589,15 @@ class Thread {
 }
 
 class Sample {
-    constructor (image,sampleX,sampleY,sampleWidth,sampleHeight) {
+    constructor (sampleX,sampleY,sampleWidth,sampleHeight,image = new Image()) {
         this.img = image;
         this.sampleX = sampleX;
         this.sampleY = sampleY;
         this.sampleWidth = sampleWidth;
         this.sampleHeight = sampleHeight;
+    }
+    setImage (image) {
+        this.img = image;
     }
 }
 

@@ -25,7 +25,7 @@ let lab5 = {
 
 let gameInfo = {
     playerInfo: {
-        characters: {}
+        characters: []
     },
     game: {
         scenes: {}
@@ -33,7 +33,46 @@ let gameInfo = {
 }
 
 let media = {
-    images: {},
+    images: {
+        testSprite: {
+            image: new Image(),
+            green1_1: new Sample(0,0,0.25,0.25),
+            orange1_1: new Sample(0.5,0,0.25,0.25),
+            blue1_1: new Sample(0.75,0,0.25,0.25),
+            f: new Sample(0,0.25,0.25,0.125),
+            arrow: new Sample(0,0.25 + 0.125,0.125,0.125),
+            b: new Sample(0.125,0.25 + 0.125,0.125,0.125),
+            blue1_2: new Sample(0.25,0,0.25,0.5),
+            green2_1: new Sample(0.5,0.25,0.5,0.25),
+            green_3: new Sample(0,0.5 + 0.125,0.25,0.25 + 0.125),
+            blue3_: new Sample(0.25,0.5 + 0.125,0.25 + 0.125,0.25),
+            card: new Sample(0.25,0.75 + 0.125,0.125,0.125),
+            corruptedCard: new Sample(0.75 + 0.125,0.5 + 0.125,0.125,0.125),
+            corruptedOrange_3: new Sample(0.5 + 0.125,0.5 + 0.125,0.25,0.25 + 0.125),
+            orangew: new Sample(0,0.5,0.25 + 0.125,0.125),
+            red4_w: new Sample(0.25 + 0.125,0.5,0.5,0.125),
+            a: new Sample(0.75 + 0.125,0.5,0.125,0.125)
+        },
+        highlightedTestSprite: {
+            image: new Image(),
+            green1_1: new Sample(0,0,0.25,0.25),
+            orange1_1: new Sample(0.5,0,0.25,0.25),
+            blue1_1: new Sample(0.75,0,0.25,0.25),
+            f: new Sample(0,0.25,0.25,0.125),
+            arrow: new Sample(0,0.25 + 0.125,0.125,0.125),
+            b: new Sample(0.125,0.25 + 0.125,0.125,0.125),
+            blue1_2: new Sample(0.25,0,0.25,0.5),
+            green2_1: new Sample(0.5,0.25,0.5,0.25),
+            green_3: new Sample(0,0.5 + 0.125,0.25,0.25 + 0.125),
+            blue3_: new Sample(0.25,0.5 + 0.125,0.25 + 0.125,0.25),
+            card: new Sample(0.25,0.75 + 0.125,0.125,0.125),
+            corruptedCard: new Sample(0.75 + 0.125,0.5 + 0.125,0.125,0.125),
+            corruptedOrange_3: new Sample(0.5 + 0.125,0.5 + 0.125,0.25,0.25 + 0.125),
+            orangew: new Sample(0,0.5,0.25 + 0.125,0.125),
+            red4_w: new Sample(0.25 + 0.125,0.5,0.5,0.125),
+            a: new Sample(0.75 + 0.125,0.5,0.125,0.125)
+        }
+    },
     audio: {},
     fonts: {}
 }
@@ -50,7 +89,6 @@ function constructMain () {
     let sprite = new Sprite();
     let thread = new Thread([
         () => {
-            sprite.y = canvas.referenceHeight / 2;
             sprite.activate();
         },
         () => {
@@ -84,7 +122,7 @@ function constructTitleScreen () {
             sprite.activate();
         },
         () => {
-            let buttonPressed = false;
+            let buttonPressed = true;
 
             console.log("title screen...");
 
@@ -113,11 +151,15 @@ function constructLoad () {
     let sprite = new Sprite();
     let thread = new Thread([
         () => {
-            let loaded = true;                      // logic here
+            mediaInterface.images.reqeustSamples(media.images.testSprite,media.images.testSprite.image,"./assets/images/testSprite.png");
+            mediaInterface.images.reqeustSamples(media.images.highlightedTestSprite,media.images.highlightedTestSprite.image,"./assets/images/testSpriteHighlighted.png")
+        },
+        () => {
+            let loaded = mediaInterface.images.loadProgress(media.images);
 
-            console.log("loading... " + 0 + "%");   // animation here
+            console.log("loading... " + loaded.percentage + "%");
 
-            if (loaded) {                           // continue condition here
+            if (loaded.finished) {
                 thread.returnThread();
                 return;
             }
@@ -137,7 +179,14 @@ function constructMenu () {
         () => {
             console.log("menu...");
 
-            
+            sprite.addImageSample(media.images.testSprite.corruptedCard)
+            sprite.x = 0;
+            sprite.y = 0;
+            sprite.width = sprite.sample.sampleWidth;
+            sprite.height = sprite.sample.sampleHeight;
+            sprite.activate()
+
+            thread.requestNextFrameAndLoop()
         }
     ])
 
@@ -150,118 +199,68 @@ function constructGame () {
     let sprite = new Sprite();
     let subSprites = {
         characterSelection: {
-            thread: new Thread(),
-            selectedCharacters: []
+            thread: new Thread()
         },
         load: {
             thread: new Thread()
         },
         level: {
-            thread: new Thread(),
-            done: false,
-            playerIsWinner: false,
-        },
-        winScreen: {
             thread: new Thread()
         },
-        defeatScreen: {
+        unload: {
             thread: new Thread()
         }
     }
     let scene = lab5.main.subSprites.game.scene;
-    let selectedCharacters = subSprites.characterSelection.selectedCharacters;
     let thread = new Thread ([
         () => {
-            thread.lendThread(subSprites.characterSelection);
+            thread.lendThread(subSprites.characterSelection.thread);
         },
         () => {
-            thread.lendThread(subSprites.load);
+            thread.lendThread(subSprites.load.thread);
         },
         () => {
-            thread.lendThread(subSprites.level);
-            if (subSprites.level.done) {
-                return;
-            }
-            thread.requestNextFrameAndLoop();
+            thread.lendThread(subSprites.level.thread);
         },
         () => {
-            if (subSprites.level.playerIsWinner) {
-                thread.lendThread(subSprites.winScreen);
-            } else {
-                thread.lendThread(subSprites.defeatScreen);
-            }
+            thread.lendThread(subSprites.unload.thread);
         }
-    ])
+    ]);
 
-    function constructLevel (fusion) {
-        let sprite = new Sprite();
-        let subSprites =  {
-            ui: {
-                subSprites: {
-                    chooseCard: {
-                        character: {},
-                        thread: new Thread()
-                    },
-                    showCharacterDetails: {
-                        character: {},
-                        thread: new Thread()
-                    }
-                }
-            },
-            scene: {
-                thread: new Thread()
-            },
-            pause: {
-                thread: new Thread()
-            }
-        }
-    
-        let spriteMethods = {
-            pauseGameAnimationSmooth () {},
-            unpauseGameAnimationSmooth () {},
-            blockingAnimationDone () {},
-            winnerDecided (characters) {},
-            getWinners (characters) {},
-            getAliveCharacters (characters) {},
-            getQuickestCharacter (characters) {}
-        }
-
-    
-        let thread = new Thread([
+    function constructCharacterSelection () {
+        let selecteableCharacters = gameInfo.playerInfo.characters;
+        let sprite = new Sprite ();
+        let thread = new Thread ([
             () => {
-                thread.lendThread(subSprites.scene);
-            },
-            () => {
-                if (sprite.blockingAnimationDone()) {
-                    return;
-                }
-                thread.requestNextFrameAndLoop();
-            },
-            () => {
-                if (spriteMethods.winnerDecided()) {
-                    thread.returnThread();
-                    return;
-                }
                 
-            },
-            () => {
-                if (quickestCharacter.controlleable) {
-                    subSprites.ui.subSprites.chooseCard.character = quickestCharacter;
-                    thread.lendThread(subSprites.ui.subSprites.chooseCard.thread);
-                } else {
-                    quickestCharacter.ai.chooseCardToActivate();
-                }
             }
         ])
-    
-        sprite.addSubsprites(subSprites);
-        sprite.addThread(thread);
-        sprite.fuseSprite(spriteMethods);
-        return sprite.fuseSprite(fusion);
+    }
+    function constructGameLoad () {
+        let sprite = new Sprite ();
+        let thread = new Thread ([
+            () => {
+                
+            }
+        ])
+    }
+    function constructLevel () {
+        let sprite = new Sprite ();
+        let thread = new Thread ([
+            () => {}
+        ])
+    }
+    function constructGameUnload () {
+        let sprite = new Sprite ();
+        let thread = new Thread ([
+            () => {}
+        ])
     }
 
-    subSprites.level = constructLevel(subSprites.level);
 
+    sprite.addSubsprites(subSprites);
+    sprite.addThread(thread);
+    lab5.main.subSprites.game = sprite.fuseSprite(lab5.main.subSprites.game);
 }
 
 

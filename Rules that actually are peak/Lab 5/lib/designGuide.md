@@ -72,3 +72,6 @@ canvas.clear();
 canvas.render(sprites);
 
 ```
+
+# Typesafe handling of Information
+Have objects and classes to manage internal variables. When omitting information make sure to handle as much as possible through functions.
