@@ -6,6 +6,8 @@ let mouse = {
     wheelStagger: false,
     mouseDown: false,
     mouseDownStagger: false,
+    mouseUp: true,
+    mouseUpStagger: false,
     mouseClick: false,
     mouseClicks: 0,
     mouseMove: false,
@@ -13,6 +15,7 @@ let mouse = {
     mouseMoveOldX: 0,
     mouseMoveOldY: 0,
     mouseMoveTolerance: 0.01,
+
     getMouseX: () => {
         return mouse.mouseX;
     },
@@ -37,6 +40,8 @@ let mouse = {
         mouse.wheelStagger = false;
         mouse.mouseDownStagger = false;
         mouse.mouseClicks = 0;
+        mouse.mouseMoveStagger = false;
+        mouse.mouseUpStagger = false;
     },
     getMouseMove: () => {
         mouse.mouseMoveStagger = false;
@@ -47,8 +52,8 @@ let mouse = {
 
 document.addEventListener("mousemove",(e) => {
 
-    mouse.mouseX = viewportInterface.unscale(e.clientX);
-    mouse.mouseY = viewportInterface.unscale(e.clientY);
+    mouse.mouseX = canvas.unscale(e.clientX);
+    mouse.mouseY = canvas.unscale(e.clientY);
 
     let deltaX = mouse.mouseMoveOldX - mouse.mouseX;
     let deltaY = mouse.mouseMoveOldY - mouse.mouseY;
@@ -69,6 +74,8 @@ document.addEventListener("mousedown",(e) => {
     if (mouse.mouseDownStagger)
         return;
     mouse.mouseDown = true;
+    if (!mouse.mouseUpStagger)
+        mouse.mouseUp = false;
     mouse.mouseDownStagger = true;
 
 })
@@ -78,10 +85,12 @@ document.addEventListener("mouseup",(e) => {
     if (mouse.mouseClick)
         mouse.mouseClicks++;
     mouse.mouseClick = false;
-    if (mouse.mouseDownStagger)
+    if (mouse.mouseUpStagger)
         return;
-    mouse.mouseDown = false;
-    mouse.mouseDownStagger = true;
+    mouse.mouseUp = true;
+    if (!mouse.mouseDownStagger)
+        mouse.mouseDown = false;
+    mouse.mouseUpStagger = true;
 
 })
 

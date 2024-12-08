@@ -12,7 +12,7 @@ let createButton = (sprite,onHover,onClick,def) => {
         typeof onClick != "function" &&
         typeof def != "function")
             return false;
-    if(!viewportInterface.mouseOn(sprite))
+    if(!canvas.mouseOn(sprite))
         return def();
     if(!mouse.getMouseDown()){
         if(sprite.buildUp) {

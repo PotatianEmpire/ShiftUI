@@ -6,11 +6,12 @@
 // In that definition this code is perfectly clean.
 // perfectionism is the devil
 
-let viewportInterface = {
+let canvas = {
 
     width: 0,
     height: 0,
     referenceHeight: 0,
+    unstaggerOnClear: true,
     /**
      * @type {CanvasRenderingContext2D}
      */
@@ -37,14 +38,6 @@ let viewportInterface = {
                 }
             }
         }
-        if(typeof sprite.activation == "function" &&
-            typeof sprite.deactivation == "function")
-            if (sprite.stateSwitched()) {
-                if (sprite.deactivated)
-                    sprite.deactivation(sprite);
-                else
-                    sprite.activation(sprite);
-            }
         if (sprite.deactivated)
             return;
         if(sprite.main instanceof ActivatedFunction) {
@@ -158,8 +151,6 @@ let viewportInterface = {
                     text = valArr.join("\"");
                 }
                 this.context.fillText(text,scaledX,scaledY + offset);
-                console.log(`x ${scaledX}, y ${scaledY}`);
-                console.log(`width ${scaledWidth}, height ${scaledHeight}`)
                 if (!sprite.textBoxHeightScale)
                     sprite.textBoxHeightScale = 1.1
                 let offsetAmount = style.fontSize * sprite.textBoxHeightScale;
@@ -180,15 +171,20 @@ let viewportInterface = {
         if (!sprite.absoluteCoordinates)
             sprite.absoluteCoordinates = {width: 0,height: 0, x: 0, y: 0, angle: 0};
 
-        let distance = viewportInterface.calcDistance(viewportInterface.unscale(scaledX),viewportInterface.unscale(scaledY),referenceAngle.px,referenceAngle.py);
+        let distance = canvas.calcDistance(canvas.unscale(scaledX),canvas.unscale(scaledY),referenceAngle.px,referenceAngle.py);
         sprite.absoluteCoordinates.width = scaledWidth;
         sprite.absoluteCoordinates.height = scaledHeight;
         sprite.absoluteCoordinates.x = ((distance) * Math.cos(referenceAngle.angle * Math.PI * 2)) + referenceAngle.px;
         sprite.absoluteCoordinates.y = ((distance) * Math.sin(referenceAngle.angle * Math.PI * 2)) + referenceAngle.py;
         sprite.absoluteCoordinates.angle = referenceAngle.angle + (sprite.angle? sprite.angle : 0);
 
-        if (typeof sprite.subPass == "function")
-            sprite.subPass(sprite);
+        if (sprite.subPass instanceof Array && sprite.active) {
+            for (let func of sprite.subPass) {
+                if (typeof func == "function") {
+                    func(sprite)
+                }
+            }
+        }
         if (sprite.subSprites && !sprite.subSpritesDeactivated && depth < 100) {
             if (typeof sprite.subSprites == "object")
                 this.render(sprite.subSprites,this.unscale(scaledX),this.unscale(scaledY),this.unscale(scaledWidth),{angle: referenceAngle.angle + (sprite.angle? sprite.angle : 0),px: sprite.absoluteCoordinates.x,py: sprite.absoluteCoordinates.y},depth);
@@ -197,9 +193,9 @@ let viewportInterface = {
         }
         this.context.restore();
     },
-    scale: (coord) => coord * viewportInterface.width,
+    scale: (coord) => coord * canvas.width,
     localScale: (coord,reference) => coord * reference,
-    unscale: (coord) => coord / viewportInterface.width,
+    unscale: (coord) => coord / canvas.width,
     localUnscale: (coord,reference) => coord / reference,
     calcDistance: (x1,y1,x2,y2) => {
         let deltaX = x1 - x2;
@@ -207,7 +203,7 @@ let viewportInterface = {
         return Math.sqrt(deltaX * deltaX + deltaY * deltaY)
     },
     normalizeX: (x) => x - 0.5,
-    normalizeY: (y) => y - viewportInterface.referenceHeight / 2,
+    normalizeY: (y) => y - canvas.referenceHeight / 2,
     /**
      * 
      * @param {*} sprites 
@@ -216,7 +212,7 @@ let viewportInterface = {
      * @param {*} reference
      * @param {Number} depth recursion depth starting point for subSprites (max recursion depth = 100)
      */
-    render (sprites,x = 0, y = 0, reference = 1.0, referenceAngle = {angle: 0, px: 0.5, py: viewportInterface.referenceHeight / 2}, depth = 0) {
+    render (sprites,x = 0, y = 0, reference = 1.0, referenceAngle = {angle: 0, px: 0.5, py: canvas.referenceHeight / 2}, depth = 0) {
 
         for (const spriteKey of Object.keys(sprites)) {
             let sprite = sprites[spriteKey];
@@ -236,8 +232,9 @@ let viewportInterface = {
         }
     },
     clear () {
-        viewportInterface.context.canvas.height = this.height;
-        viewportInterface.context.canvas.width = this.width;
+        mouse.unstaggerAll();
+        canvas.context.canvas.height = this.height;
+        canvas.context.canvas.width = this.width;
         this.referenceHeight = this.unscale(this.height);
         this.context.clearRect(0, 0, this.context.canvas.width, this.context.canvas.height);
     },
@@ -324,7 +321,10 @@ class Sprite {
     y = 0;
     width = 0;
     height = 0;
+    /** @description deactivated deactivates all rendering excluding threads and activation */
     deactivated = true;
+    /** @description active can be used as a cue to other parts of the program if said sprite has been activated or deactivated */
+    active = false;
     stateSwitch = false;
     constructor (x = 0.5,y = 0.3,width = 0.5,height = 0.3,subSprites = null) {
         this.x = x;
@@ -333,6 +333,7 @@ class Sprite {
         this.height = height;
         if(subSprites)
             this.addSubsprites(subSprites)
+        this.addActivation();
     }
     addText (text,textBoxHeightScale = 1.0,align = "center") {
         this.text = text
@@ -390,15 +391,17 @@ class Sprite {
         this.sample = sample;
     }
     deactivate () {
-        this.stateSwitch = !this.deactivated;
-        this.deactivated = true;
+        this.stateSwitch = this.active;
+        this.active = false;
+        this.deactivation(this);
     }
     activate () {
-        this.stateSwitch = this.deactivated;
-        this.deactivated = false;
+        this.stateSwitch = !this.active;
+        this.active = true;
+        this.activation(this);
     }
     wasActivated () {
-        let ret = this.stateSwitch && !this.deactivated;
+        let ret = this.stateSwitch && this.active;
         this.stateSwitch = false;
         return ret;
     }
@@ -414,7 +417,9 @@ class Sprite {
     addSubPass (subPass) {
         if (typeof subPass != "function")
             return;
-        this.subPass = subPass;
+        if (!this.subPass)
+            this.subPass = [];
+        this.subPass.push(subPass);
     }
     addAnimationChain (animations = {}) {
         if (!this.animation)
@@ -456,7 +461,7 @@ class Sprite {
      * @param {{(sprite: Sprite): void}} activation 
      * @param {{(sprite: Sprite): void}} deactivation
      */
-    addActivation (activation = () => {}, deactivation = () => {}) {
+    addActivation (activation = (sprite) => {sprite.deactivated = false}, deactivation = (sprite) => {sprite.deactivated = true}) {
         if (typeof activation == "function" &&
             typeof deactivation == "function") {
                 this.activation = activation;
@@ -482,9 +487,9 @@ class Sprite {
     activateSubSprites () {
         if (!this.subSprites)
             return;
-        for (const key in this.subSprites) {
-            this.subSprites[key].activate();
-        }
+        this.forEach(sprite => {
+            sprite.activate();
+        })
         this.subSpritesDeactivated = false;
     }
 
@@ -529,7 +534,7 @@ class Sprite {
      * 
      * @param {Sprite} sprite 
      */
-    touches (sprite) {
+    overlaps (sprite) {
         if (!sprite.absoluteCoordinates ||
             !this.absoluteCoordinates)
             return false;

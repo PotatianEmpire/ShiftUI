@@ -24,13 +24,29 @@ let lab5 = {
             },
             mouse: {
                 switch (sprite) {},
+                size: 1,
                 subSprites: {
-                    normal: {}
+                    normal: {
+                        subSprites: {
+                            mouseDown: {
+                                active: false
+                            },
+                            mouseUp: {
+                                active: true
+                            },
+                            mouseClick: {
+                                active: false
+                            }
+                        }
+                    },
+                    pointer: new Sprite(0,0,0.05,0.05)
                 }
             }
         }
     }
 }
+
+let mousePointer = lab5.main.subSprites.mouse.subSprites.pointer;
 
 
 let gameInfo = {
@@ -100,11 +116,11 @@ let media = {
 
 function constructLab5 () {
     constructMain();
-    constructTitleScreen();
+    lab5.main.subSprites.titleScreen = titleScreenConstructors.constructTitleScreen(lab5.main.subSprites.titleScreen);
     constructLoad();
     constructMenu();
     constructGame();
-    constructMouse();
+    lab5.main.subSprites.mouse = mouseConstructors.constructMouse(lab5.main.subSprites.mouse);
 }
 
 function constructMain () {
@@ -115,6 +131,7 @@ function constructMain () {
             sprite.width = 1;
             sprite.x = 0.5;
 
+            lab5.main.subSprites.mouse.activate();
             sprite.activate();
         },
         () => {
@@ -138,71 +155,16 @@ function constructMain () {
 
 
     let subPass = () => {
-        viewportInterface.width = window.innerWidth;
-        viewportInterface.height = window.innerHeight;
-        sprite.height = viewportInterface.referenceHeight;
-        sprite.y = viewportInterface.referenceHeight/2;
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        sprite.height = canvas.referenceHeight;
+        sprite.y = canvas.referenceHeight/2;
     }
 
 
     sprite.addThread(thread);
     sprite.addSubPass(subPass);
     lab5.main = sprite.fuseSprite(lab5.main);
-}
-
-function constructTitleScreen () {
-    let sprite = new Sprite();
-    let subSprites = {
-        button: {
-            activate() {}
-        }
-    }
-    let thread = new Thread([
-        () => {
-            sprite.width = 1;
-            sprite.height = 1;
-            sprite.x = 0;
-            sprite.y = 0;
-
-            mediaInterface.images.reqeustSamples(media.images.title.backdrop,media.images.title.backdrop.image,"./assets/images/titleTest.png");
-            mediaInterface.images.reqeustSamples(media.images.title.buttons,media.images.title.buttons.image,"./assets/images/titleButtons.png");
-            mediaInterface.images.reqeustSamples(media.images.testSprite,media.images.testSprite.image,"./assets/images/testSprite.png");
-            mediaInterface.images.reqeustSamples(media.images.highlightedTestSprite,media.images.highlightedTestSprite.image,"./assets/images/testSpriteHighlighted.png")
-        },
-        () => {
-            let loaded = mediaInterface.images.loadProgress(media.images.title);
-            
-            if (loaded.finished) {
-                return;
-            }
-            thread.requestNextFrameAndLoop();
-        },
-        () => {
-            sprite.addImageSample(media.images.title.backdrop.title);
-
-            lab5.main.subSprites.mouse.activate();
-            lab5.main.subSprites.mouse.switch(lab5.main.subSprites.mouse.subSprites.normal);
-            sprite.activate();
-        },
-        () => {
-            let buttonPressed = false;
-
-            console.log("title screen...");
-            sprite.angle += 0.01
-
-            if (buttonPressed) {
-                sprite.deactivate();
-                thread.returnThread();
-                return;
-            }
-
-            thread.requestNextFrameAndLoop();
-        }
-    ])
-
-    sprite.addSubsprites(subSprites);
-    sprite.addThread(thread);
-    lab5.main.subSprites.titleScreen = sprite.fuseSprite(lab5.main.subSprites.titleScreen);
 }
 
 function constructLoad () {
@@ -347,46 +309,3 @@ function constructSettings () {
     }
 }
 
-function constructMouse () {
-    let sprite = new Sprite ();
-
-    sprite.x = 0;
-    sprite.y = 0;
-    sprite.width = 1;
-    sprite.height = 1;
-
-    let subSprites = {
-        normal: {}
-    }
-
-    function constructNormalMode () {
-        let sprite = new Sprite ();
-
-        sprite.addImageSample(media.images.testSprite.arrow);
-        sprite.width = sprite.sample.sampleWidth;
-        sprite.height = sprite.sample.sampleHeight;
-
-        let subPass = () => {
-
-            if (mouse.getMouseDown()) {
-                sprite.sample = media.images.highlightedTestSprite.arrow;
-            } else {
-                sprite.sample = media.images.testSprite.arrow;
-            }
-
-            sprite.x = viewportInterface.normalizeX(mouse.getMouseX());
-            sprite.y = viewportInterface.normalizeY(mouse.getMouseY());
-
-            console.log(sprite)
-        }
-
-
-        sprite.addSubPass(subPass);
-        subSprites.normal = sprite.fuseSprite(subSprites.normal);
-    }
-
-    constructNormalMode();
-
-    sprite.addSubsprites(subSprites);
-    lab5.main.subSprites.mouse = sprite.fuseSprite(lab5.main.subSprites.mouse);
-}
