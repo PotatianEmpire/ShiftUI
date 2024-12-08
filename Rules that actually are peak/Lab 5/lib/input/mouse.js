@@ -47,8 +47,8 @@ let mouse = {
 
 document.addEventListener("mousemove",(e) => {
 
-    mouse.mouseX = canvas.unscale(e.clientX);
-    mouse.mouseY = canvas.unscale(e.clientY);
+    mouse.mouseX = viewportInterface.unscale(e.clientX);
+    mouse.mouseY = viewportInterface.unscale(e.clientY);
 
     let deltaX = mouse.mouseMoveOldX - mouse.mouseX;
     let deltaY = mouse.mouseMoveOldY - mouse.mouseY;

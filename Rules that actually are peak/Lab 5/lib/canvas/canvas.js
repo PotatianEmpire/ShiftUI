@@ -4,8 +4,9 @@
 // If you code for aesthetics you have a problem.
 // You should define clean code by how easy it is to finde bugs and develop further.
 // In that definition this code is perfectly clean.
+// perfectionism is the devil
 
-let canvas = {
+let viewportInterface = {
 
     width: 0,
     height: 0,
@@ -21,9 +22,10 @@ let canvas = {
      * @param {*} x 
      * @param {*} y 
      * @param {*} reference
+     * @param {{angle: Number,px: Number,py: Number}} referenceAngle
      * @param {Number} depth recursion depth starting point for subSprites (max recursion depth = 100)
      */
-    draw(sprite,x,y,reference,depth){
+    draw(sprite,x,y,reference,referenceAngle,depth){
         if(sprite.thread) {
             if(sprite.thread.origin && !sprite.thread.paused) {
                 const nextFrame = {next: false};
@@ -93,6 +95,7 @@ let canvas = {
             this.context.rotate(sprite.angle*2*Math.PI);
             this.context.translate(-scaledX,-scaledY);
         }
+
         if(sprite.transparency)
             this.context.globalAlpha = sprite.transparency;
         if(sprite.img)
@@ -173,17 +176,38 @@ let canvas = {
                     return !val.delete;
                 });
         }
+
+        if (!sprite.absoluteCoordinates)
+            sprite.absoluteCoordinates = {width: 0,height: 0, x: 0, y: 0, angle: 0};
+
+        let distance = viewportInterface.calcDistance(viewportInterface.unscale(scaledX),viewportInterface.unscale(scaledY),referenceAngle.px,referenceAngle.py);
+        sprite.absoluteCoordinates.width = scaledWidth;
+        sprite.absoluteCoordinates.height = scaledHeight;
+        sprite.absoluteCoordinates.x = ((distance) * Math.cos(referenceAngle.angle * Math.PI * 2)) + referenceAngle.px;
+        sprite.absoluteCoordinates.y = ((distance) * Math.sin(referenceAngle.angle * Math.PI * 2)) + referenceAngle.py;
+        sprite.absoluteCoordinates.angle = referenceAngle.angle + (sprite.angle? sprite.angle : 0);
+
         if (typeof sprite.subPass == "function")
             sprite.subPass(sprite);
         if (sprite.subSprites && !sprite.subSpritesDeactivated && depth < 100) {
-            this.render(sprite.subSprites,this.unscale(scaledX),this.unscale(scaledY),this.unscale(scaledWidth),depth);
+            if (typeof sprite.subSprites == "object")
+                this.render(sprite.subSprites,this.unscale(scaledX),this.unscale(scaledY),this.unscale(scaledWidth),{angle: referenceAngle.angle + (sprite.angle? sprite.angle : 0),px: sprite.absoluteCoordinates.x,py: sprite.absoluteCoordinates.y},depth);
+            else if (Array.isArray(sprite.subSprites))
+                this.renderArray(sprite.subSprites,this.unscale(scaledX),this.unscale(scaledY),this.unscale(scaledWidth),{angle: referenceAngle.angle + (sprite.angle? sprite.angle : 0),px: sprite.absoluteCoordinates.x,py: sprite.absoluteCoordinates.y},depth);
         }
         this.context.restore();
     },
-    scale: (coord) => coord * canvas.width,
+    scale: (coord) => coord * viewportInterface.width,
     localScale: (coord,reference) => coord * reference,
-    unscale: (coord) => coord / canvas.width,
+    unscale: (coord) => coord / viewportInterface.width,
     localUnscale: (coord,reference) => coord / reference,
+    calcDistance: (x1,y1,x2,y2) => {
+        let deltaX = x1 - x2;
+        let deltaY = y1 - y2;
+        return Math.sqrt(deltaX * deltaX + deltaY * deltaY)
+    },
+    normalizeX: (x) => x - 0.5,
+    normalizeY: (y) => y - viewportInterface.referenceHeight / 2,
     /**
      * 
      * @param {*} sprites 
@@ -192,28 +216,28 @@ let canvas = {
      * @param {*} reference
      * @param {Number} depth recursion depth starting point for subSprites (max recursion depth = 100)
      */
-    render (sprites,x = 0, y = 0, reference = 1.0, depth = 0) {
-        
+    render (sprites,x = 0, y = 0, reference = 1.0, referenceAngle = {angle: 0, px: 0.5, py: viewportInterface.referenceHeight / 2}, depth = 0) {
+
         for (const spriteKey of Object.keys(sprites)) {
             let sprite = sprites[spriteKey];
-            this.draw(sprite,x,y,reference, depth + 1);
+            this.draw(sprite,x,y,reference,referenceAngle, depth + 1);
         }
     },
-    renderArray (sprites,x = 0, y = 0, reference = 1.0) {
+    renderArray (sprites,x = 0, y = 0, reference = 1.0,  referenceAngle = {angle: 0, px: 0, py: 0}, depth = 0) {
         
         sprites.forEach(sprite => {
-            this.draw(sprite,x,y,reference);
+            this.draw(sprite,x,y,reference,referenceAngle,depth+1);
         })
     },
-    reverseRenderArray (sprites,x = 0, y = 0, reference = 1.0) {
+    reverseRenderArray (sprites,x = 0, y = 0, reference = 1.0,  referenceAngle = {angle: 0, px: 0, py: 0},depth =0) {
         
         for (let i = sprites.length - 1; i >= 0; i--) {
-            this.draw(sprites[i],x,y,reference);        
+            this.draw(sprites[i],x,y,reference,referenceAngle,depth+ 1);        
         }
     },
     clear () {
-        canvas.context.canvas.height = this.height;
-        canvas.context.canvas.width = this.width;
+        viewportInterface.context.canvas.height = this.height;
+        viewportInterface.context.canvas.width = this.width;
         this.referenceHeight = this.unscale(this.height);
         this.context.clearRect(0, 0, this.context.canvas.width, this.context.canvas.height);
     },
@@ -422,6 +446,9 @@ class Sprite {
      * @param {ActivatedFunction} mainFunction
      */
     addMainFunction (mainFunction) {
+        /**
+         * @deprecated
+         */
         this.main = mainFunction;
     }
     /**
@@ -468,9 +495,9 @@ class Sprite {
     deactivateSubSprites () {
         if (!this.subSprites)
             return;
-        for (const key in this.subSprites) {
-            this.subSprites[key].deactivate();
-        }
+        this.forEach(sprite => {
+            sprite.deactivate();
+        })
         this.subSpritesDeactivated = true;
     }
 
@@ -482,10 +509,47 @@ class Sprite {
         if (typeof callback != "function")
             return;
         for (const key in this.subSprites) {
-            callback(this.subSprites[key],key);
+            if(this.subSprites[key] instanceof Sprite)
+                callback(this.subSprites[key],key);
         }
     }
 
+
+    initializeAbsoluteCoordinates () {
+        this.absoluteCoordinates = {
+            x: 0,
+            y: 0,
+            width: 0,
+            height: 0,
+            angle: 0
+        }
+    }
+
+    /**
+     * 
+     * @param {Sprite} sprite 
+     */
+    touches (sprite) {
+        if (!sprite.absoluteCoordinates ||
+            !this.absoluteCoordinates)
+            return false;
+        if (sprite.absoluteCoordinates.x - sprite.absoluteCoordinates.width/2 < this.absoluteCoordinates.x + this.absoluteCoordinates.width/2 &&
+            sprite.absoluteCoordinates.x + sprite.absoluteCoordinates.width/2 > this.absoluteCoordinates.x - this.absoluteCoordinates.width/2 &&
+            sprite.absoluteCoordinates.y - sprite.absoluteCoordinates.height/2 < this.absoluteCoordinates.y + this.absoluteCoordinates.height/2 &&
+            sprite.absoluteCoordinates.y + sprite.absoluteCoordinates.height/2 > this.absoluteCoordinates.y - this.absoluteCoordinates.height/2)
+            return true;
+        return false;
+    }
+
+    /**
+     * 
+     * @param {Sprite} sprite 
+     */
+    switch (sprite) {
+        this.deactivateSubSprites();
+        this.subSpritesDeactivated = false;
+        sprite.activate();
+    }
 } 
 
 class Thread {

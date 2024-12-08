@@ -1,18 +1,18 @@
 function init () {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    viewportInterface.width = window.innerWidth;
+    viewportInterface.height = window.innerHeight;
 
     constructLab5();
 }
 
 
 function main () {
-    canvas.clear();
+    viewportInterface.clear();
     console.log("----- new frame -----");
-    canvas.render(lab5);
+    viewportInterface.render(lab5);
 }
 
-let fps = 1;
+let fps = 60;
 
 init();
 setInterval(() => {
