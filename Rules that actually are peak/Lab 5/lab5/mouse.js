@@ -11,116 +11,127 @@ let mouseConstructors = {
 mouseConstructors.constructMouse = function (parent) {
     let sprite = new Sprite(0,0,1,1);
     let subSprites = {
-        normal: {},
+        normal: {
+            thread: new Thread ()
+        },
         pointer: new Sprite(0,0,0,0)
     }
+    subSprites.normal = mouseConstructors.normalMode.constructNormalMode(subSprites.normal);
 
-    subSprites.normal = this.normalMode.constructNormalMode(subSprites.normal);
-
-    function subPass () {
-        sprite.x = canvas.normalizeX(mouse.mouseX);
-        sprite.y = canvas.normalizeY(mouse.mouseY);
-    }
+    let thread = new Thread ([
+        () => {
+            sprite.x = canvas.normalizeX(mouse.mouseX);
+            sprite.y = canvas.normalizeY(mouse.mouseY);
+        }
+    ])
     
-    sprite.addSubPass(subPass);
+    sprite.addThread(thread);
     sprite.addSubsprites(subSprites);
     return sprite.fuseSprite(parent);
 }
 
 mouseConstructors.normalMode.constructNormalMode = function (parent) {
     let sprite = new Sprite(0,0,1/32,1/32);
+    
     let subSprites = {
-        mouseDown: {
-            activate () {},
-            deactivate () {},
-            active: false
+        up: {
+            thread: new Thread ()
         },
-        mouseUp: {
-            activate () {},
-            deactivate () {},
-            active: true
+        down: {
+            thread: new Thread ()
         },
-        mouseClick: {
-            activate () {},
-            deactivate () {},
-            active: false
-        },
+        click: {
+            thread: new Thread ()
+        }
     }
+    subSprites.up = mouseConstructors.normalMode.constructMouseUp(subSprites.up);
+    subSprites.down = mouseConstructors.normalMode.constructMouseDown(subSprites.down);
+    subSprites.click = mouseConstructors.normalMode.constructMouseClick(subSprites.click);
 
-    subSprites.mouseDown = mouseConstructors.normalMode.constructMouseDown(subSprites.mouseDown,sprite);
-    subSprites.mouseUp = mouseConstructors.normalMode.constructMouseUp(subSprites.mouseUp,sprite);
-    subSprites.mouseClick = mouseConstructors.normalMode.constructMouseClick(subSprites.mouseClick,sprite);
+    let thread = new Thread ([
+        () => {
+            sprite.activate();
+        },
+        () => {
+            thread.lendThread(subSprites.up.thread);
+        },
+        () => {
+            thread.lendThread(subSprites.down.thread);
+        },
+        () => {
+            thread.lendThread(subSprites.click.thread);
+        }
+    ])
 
-    function activation () {
-        sprite.deactivated = false;
-        sprite.switch(subSprites.mouseUp);
-    }
-
-    sprite.addActivation(activation);
+    sprite.addThread(thread);
     sprite.addSubsprites(subSprites);
     return sprite.fuseSprite(parent);
 }
 
-mouseConstructors.normalMode.constructMouseDown = function (parent,mode) {
+mouseConstructors.normalMode.constructMouseUp = function (parent) {
     let sprite = new Sprite(0,0,1,1);
     
-    sprite.addImageSample(media.images.highlightedTestSprite.arrow);
-
-    function subPass () {
-        console.log("mouseDown")
-        if (mouse.mouseUp) {
-            mode.switch(mode.subSprites.mouseClick);
-        }
-    }
-
-    sprite.addSubPass(subPass);
-
-    return sprite.fuseSprite(parent);
-}
-
-mouseConstructors.normalMode.constructMouseUp = function (parent,mode) {
-    let sprite = new Sprite(0,0,1,1);
-
     sprite.addImageSample(media.images.testSprite.arrow);
 
-    function subPass () {
-        console.log("mouseUp")
-        if (mouse.mouseDown) {
-            mode.switch(mode.subSprites.mouseDown);
+    let thread = new Thread ([
+        () => {
+            sprite.activate();
+        },
+        () => {
+
+            if (mouse.mouseDown) {
+                thread.returnThread();
+                sprite.deactivate();
+                return;
+            }
+
+            thread.requestNextFrameAndLoop();
         }
-    }
+    ])
 
-    sprite.addSubPass(subPass);
-
+    sprite.addThread(thread);
     return sprite.fuseSprite(parent);
 }
 
-mouseConstructors.normalMode.constructMouseClick = function (parent,mode) {
+mouseConstructors.normalMode.constructMouseDown = function (parent) {
+    let sprite = new Sprite(0,0,1,1);
+
+    sprite.addImageSample(media.images.highlightedTestSprite.arrow);
+
+    let thread = new Thread ([
+        () => {
+            sprite.activate();
+        },
+        () => {
+            if (!mouse.mouseDown) {
+                thread.returnThread();
+                sprite.deactivate();
+                return;
+            }
+
+            thread.requestNextFrameAndLoop();
+        }
+    ])
+
+    sprite.addThread(thread);
+    return sprite.fuseSprite(parent);
+}
+
+mouseConstructors.normalMode.constructMouseClick = function (parent) {
     let sprite = new Sprite(0,0,1,1);
 
     sprite.addImageSample(media.images.testSprite.corruptedCard);
 
-    function subPass () {
-        mode.switch(mode.subSprites.mouseUp)
-    }
+    let thread = new Thread ([
+        () => {
+            sprite.activate();
+        },
+        () => {
+            thread.returnThread();
+            sprite.deactivate();
+        }
+    ])
 
-    function activation () {
-        sprite.deactivated = false;
-    }
-    function deactivation () {
-        sprite.swapAnimation("deactivate");
-        sprite.animation.activate();
-    }
-    let animation = new ActivatedFunction (() => {
-        sprite.deactivated = true;
-    }, () => {
-        console.log(animation.frame)
-        if (animation.frame > 100)
-            sprite.deactivated = true;
-    })
-    sprite.addAnimationToChain(animation,"deactivate");
-    sprite.addActivation(activation,deactivation);
-    sprite.addSubPass(subPass);
-
+    sprite.addThread(thread);
     return sprite.fuseSprite(parent);
 }

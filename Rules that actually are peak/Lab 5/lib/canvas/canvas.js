@@ -393,12 +393,12 @@ class Sprite {
     deactivate () {
         this.stateSwitch = this.active;
         this.active = false;
-        this.deactivation(this);
+        this.deactivated = true;
     }
     activate () {
         this.stateSwitch = !this.active;
         this.active = true;
-        this.activation(this);
+        this.deactivated = false;
     }
     wasActivated () {
         let ret = this.stateSwitch && this.active;
@@ -457,7 +457,7 @@ class Sprite {
         this.main = mainFunction;
     }
     /**
-     * 
+     * Only use for post-processing
      * @param {{(sprite: Sprite): void}} activation 
      * @param {{(sprite: Sprite): void}} deactivation
      */
@@ -621,6 +621,15 @@ class Thread {
         this.lender.returnVal = returnVal;
         this.returnThisThread = true;
     }
+    /**
+     * 
+     * @param {Thread} thread 
+     * @param {*} args 
+     */
+    cloneThread (thread,args) {
+        thread.makeThreadOrigin();
+        thread.args = args;
+    }
     requestNextFrame () {
         this.nextFrame = true;
     }
@@ -629,6 +638,11 @@ class Thread {
             return;
         this.next += steps - 1;
         this.requestNextFrame();
+    }
+    move (steps = 0) {
+        if (this.next - steps < 0 || this.functions.length - 1 < this.next - steps)
+            return;
+        this.next += steps - 1;
     }
     makeThreadOrigin () {
         this.origin = true;
@@ -658,8 +672,8 @@ class Thread {
             this.lender.resume();
         this.requestNextFrame()
     }
+    
 }
-
 class Sample {
     constructor (sampleX,sampleY,sampleWidth,sampleHeight,image = new Image()) {
         this.img = image;

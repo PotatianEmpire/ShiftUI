@@ -46,19 +46,13 @@ titleScreenConstructors.constructTitleScreen = function (parent) {
         },
         () => {
             
-            lab5.main.subSprites.mouse.switch(lab5.main.subSprites.mouse.subSprites.normal);
+            thread.cloneThread(lab5.main.subSprites.mouse.subSprites.normal.thread);
             sprite.activateSubSprites();
             sprite.activate();
         },
         () => {
-            if (subSprites.resetButton.subSprites.clicked.active) {
-                thread.lendThread(subSprites.resetButton.thread);
-                return;
-            }
-            if (false && lab5.main.subSprites.mouse.subSprites.normal.subSprites.mouseClick.active) {
-                thread.returnThread();
-                return;
-            }
+            
+
             thread.requestNextFrameAndLoop();
         }
     ])

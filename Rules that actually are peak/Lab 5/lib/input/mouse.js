@@ -42,6 +42,8 @@ let mouse = {
         mouse.mouseClicks = 0;
         mouse.mouseMoveStagger = false;
         mouse.mouseUpStagger = false;
+        mouse.mouseUp = false;
+        mouse.mouseDown = false;
     },
     getMouseMove: () => {
         mouse.mouseMoveStagger = false;
@@ -74,8 +76,6 @@ document.addEventListener("mousedown",(e) => {
     if (mouse.mouseDownStagger)
         return;
     mouse.mouseDown = true;
-    if (!mouse.mouseUpStagger)
-        mouse.mouseUp = false;
     mouse.mouseDownStagger = true;
 
 })
@@ -88,8 +88,6 @@ document.addEventListener("mouseup",(e) => {
     if (mouse.mouseUpStagger)
         return;
     mouse.mouseUp = true;
-    if (!mouse.mouseDownStagger)
-        mouse.mouseDown = false;
     mouse.mouseUpStagger = true;
 
 })
