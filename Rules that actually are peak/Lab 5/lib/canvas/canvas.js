@@ -316,7 +316,7 @@ class ActivatedFunction {
     }
 }
 
-class Sprite {
+class SpriteOld {
     x = 0;
     y = 0;
     width = 0;
