@@ -359,7 +359,7 @@ class Canvas {
      * @param {String} id id of the canvas element
      */
     constructor (id) {
-        this.context = document.getElementById(id).getContext("2d")
+        this.context = document.getElementById(id).getContext("2d");
     }
 
     /**
@@ -391,12 +391,20 @@ class Canvas {
     /**
      * Draws the sprite onto the canvas.
      * @param {Sprite} sprite sprite to draw
-     * @param {Coordinate} reference the coordinates the sprite is referenced to
-     * @param {Coordinate} referenceAngle the sum of all angles
+     * @param {Sprite} reference parent sprite for rendering
      * @param {Number} depth depth of subSprite rendering [max 100]
      */
-    draw (sprite,reference = new Coordinate (),referenceAngle = new Coordinate (),depth = 0) {
+    draw (sprite,reference = new Sprite (),depth = 0) {
 
+        if (depth > this.maxDepth) {
+            return;
+        }
+
+        if (sprite.options.show) {
+            if (sprite.options.preProcessor) {
+
+            }
+        }
     }
 }
 
@@ -404,6 +412,20 @@ class Sprite {
     position;
     angle;
     dimensions;
+
+    absoluteCoordinate = new Coordinate ();
+    absoluteAngle = new Coordinate ();
+    absoluteDimensions = new Coordinate ();
+
+    drawOptions = {
+        deltaPosition: new Coordinate (),
+        deltaAngle: new Coordinate (),
+        detlaDimensions: new Coordinate (),
+
+        deltaAbsoluteCoordinate: new Coordinate (),
+        deltaAbsoluteCoordinate: new Coordinate (),
+        deltaAbsoluteDimensions: new Coordinate ()
+    }
 
     /**
      * Creates an empty sprite.
@@ -419,11 +441,11 @@ class Sprite {
         this.position = position;
         this.angle = angle;
         this.dimensions = dimensions;
+        this.drawOptions.position = this.position;
+        this.drawOptions.angle = this.angle;
+        this.drawOptions.dimensions = this.dimensions;
         this.options.show = show;
     }
-
-    absoluteCoordinate = new Coordinate ();
-    absoluteDimensions = new Coordinate ();
 
     options = {
         show: false,
@@ -433,7 +455,8 @@ class Sprite {
         particleEmitter: false,
         subSprites: false,
         transparency: false,
-        postProcessing: false,
+        preProcessor: false,
+        postProcessor: false,
         thread: false
     }
 
@@ -446,7 +469,8 @@ class Sprite {
      *          "particleEmitter" |
      *          "subSprites" |
      *          "transparency" |
-     *          "postProcessing" |
+     *          "preProcessor" |
+     *          "postProcessor" |
      *          "thread")} option 
      * @param {Boolean | ("toggle" |
      *                    "active" |
@@ -522,9 +546,17 @@ class Sprite {
     /**
      * @todo not ready for use
      */
-    addPostProcessing (postProcessing) {
-        this.postProcessing = postProcessing;
-        this.toggleOption("postProcessing","active");
+    addPreProcessor (preProcessor) {
+        this.preProcessor = preProcessor;
+        this.toggleOption("preProcessor","active");
+    }
+    
+    /**
+     * @todo not ready for use
+     */
+    addPostProcessor (postProcessor) {
+        this.postProcessor = postProcessor;
+        this.toggleOption("postProcessor","active");
     }
 
     /**
@@ -536,7 +568,7 @@ class Sprite {
     }
 
     /**
-     * Compares if two sprites overlap.
+     * Checks if two sprites are overlapping globally.
      * @param {Sprite} sprite compared sprite
      * @returns {Boolean} if the sprites are overlapping
      */
@@ -553,15 +585,163 @@ class Sprite {
         }
         return false;
     }
+    
+    /**
+     * Checks if two sprites are overlapping assuming they both inhabit the same reference sphere.
+     * @param {Sprite} sprite compared sprite
+     * @returns if the sprites are overlapping
+     */
+    localOverlapping (sprite) {
+        let negativeBorderA = this.position.difference(this.dimensions.unscale(2));
+        let positiveBorderA = this.position.add(this.dimensions.unscale(2));
+        let negativeBorderB = sprite.position.difference(sprite.dimensions.unscale(2));
+        let positiveBorderB = sprite.position.add(sprite.dimensions.unscale(2));
+        let negativeOverlap = positiveBorderB.compare(negativeBorderA);
+        let positiveOverlap = positiveBorderA.compare(negativeBorderB);
+        if (negativeOverlap.allEqual(1) &&
+            positiveOverlap.allEqual(1)) {
+            return true;
+        }
+        return false;
+    }
 
     /**
-     * Compares if two sprites overlap.
+     * Checks if two sprites overlap.
      * @param {Sprite} spriteA compared sprite
      * @param {Sprite} spriteB compared sprite
      * @returns {Boolean} if the sprites are overlapping
      */
     static overlapping (spriteA,spriteB) {
         return spriteA.overlapping(spriteB);
+    }
+
+    /**
+     * Checks if two sprites are overlapping assuming they both inhabit the same reference sphere.
+     * @param {Sprite} spriteA compared sprite
+     * @param {Sprite} spriteB compared sprite
+     * @returns if the sprites are overlapping
+     */
+    static localOverlapping (spriteA,spriteB) {
+        return spriteA.localOverlapping(spriteB)
+    }
+
+}
+
+class ChainedFunctions {
+    functions = []
+    pointer = 0;
+    finished = false;
+    returnVal;
+
+    /**
+     * Constructs an chained functions object.
+     * @param {Array<{(*): *}} functions array of chained functions
+     */
+    constructor (functions = []) {
+        this.functions = functions;
+    }
+
+    /**
+     * Calls next chained function.
+     * @param {*} args arguments to pass into the chained function
+     * @returns {Boolean} returns true if the chain has completed execution
+     */
+    callNext (args) {
+        this.finished = false;
+        this.increment();
+        let func = this.get();
+        if (!func) {
+            this.finished = true;
+            return true;
+        }
+        this.returnVal = func(args);
+        if (this.finished) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Switches finished to true.
+     * @param {*} val return value
+     */
+    return (val = 0) {
+        this.returnVal = val;
+        this.finished = true;
+    }
+
+    /**
+     * Get the current function.
+     * @returns {{(*): *} | false} returns the current function
+     */
+    get () {
+        if (this.pointer < 0) {
+            return false;
+        }
+        if (!this.end()) {
+            return false;
+        }
+        return functions[pointer];
+    }
+
+    /**
+     * Checks if the pointer has reached the end.
+     * @returns {Boolean} returns if the pointer has reached the end.
+     */
+    end () {
+        return this.pointer >= this.functions.length;
+    }
+
+    /**
+     * Increments the pointer by 1.
+     */
+    increment () {
+        this.pointer++;
+    }
+
+    /**
+     * Goes to specified location.
+     * @param {Number | ("start" |
+     *                   "end" |
+     *                   "last" |
+     *                   "previous" |
+     *                   "loop" |
+     *                   "next")} loopTo position the pointer should jump to
+     */
+    goto (loopTo = 0) {
+        switch (loopTo) {
+            case "start":
+                this.pointer = -1;
+                break;
+            case "end":
+                this.pointer = this.functions.length;
+                break;
+            case "last":
+                this.pointer = this.functions.length - 1;
+                break;
+            case "previous":
+                this.pointer-= 2;
+                break;
+            case "loop":
+                this.pointer--;
+                break;
+            case "next":
+                this.pointer = this.pointer;
+                break;
+            default:
+                if (typeof loopTo == "number") {
+                    this.pointer = loopTo;
+                }
+                break;
+        }
+    }
+
+    /**
+     * Adds function to the chain.
+     * @param {{(): void}} func function to be added
+     */
+    add (func) {
+        this.functions.push(func);
     }
 }
 
@@ -688,7 +868,7 @@ class FormattedString {
                     }
                     break;
                 default:
-                    let wordArgument = styleProperty.split('"');
+                    let wordArgument = styleProperty.split(':');
                     if (wordArgument.length < 2) {
                         if (parseFloat(styleProperty) > 0) {
                             parsedString.fontSize = parseFloat(styleProperty);
@@ -697,7 +877,7 @@ class FormattedString {
                     }
                     switch (wordArgument[0]) {
                         case "align":
-                            parsedString.align = parseFloat(wordArgument[1]);
+                            parsedString.align = wordArgument[1];
                             break;
                         case "lineSpacing":
                             parsedString.lineSpacing = parseFloat(wordArgument[1]);
@@ -738,3 +918,12 @@ class FormattedText {
         return parsedText;
     }
 }
+
+
+// testing
+
+let textTest = FormattedText.parse(`align:right lineSpacing:10 "hi"
+    "my name is"
+    align:left "tom"`);
+
+console.log(textTest);
