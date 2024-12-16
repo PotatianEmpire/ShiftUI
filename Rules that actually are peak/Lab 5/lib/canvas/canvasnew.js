@@ -1,7 +1,12 @@
+/**
+ * 3 component vector for rendering.
+ */
 class Coordinate {
     x;
     y;
     z;
+
+    static angleFactor = 2 * Math.PI;
 
     /**
      * Creates a point in space with x,y and z coordinates.
@@ -115,6 +120,18 @@ class Coordinate {
     }
 
     /**
+     * Calculates absolute value.
+     * @returns {Coordinate} absolute value
+     */
+    absoluteValue () {
+        let absoluteValue = new Coordinate ();
+        absoluteValue.x = Math.abs(this.x);
+        absoluteValue.y = Math.abs(this.y);
+        absoluteValue.z = Math.abs(this.z);
+        return absoluteValue;
+    }
+
+    /**
      * Rotates the coordinate around 0 around the x axis.
      * @param {Number} angle angle along the x axis
      * @returns {Coordinate} rotated coordinate
@@ -134,9 +151,9 @@ class Coordinate {
         zRotation.y = -Math.sin(angle);
         zRotation.z = Math.cos(angle);
 
-        rotatedCoordinate.x = xRotation.scale(this.x).summate();
-        rotatedCoordinate.y = yRotation.scale(this.y).summate();
-        rotatedCoordinate.z = zRotation.scale(this.z).summate();
+        rotatedCoordinate.x = xRotation.multiply(this).summate();
+        rotatedCoordinate.y = yRotation.multiply(this).summate();
+        rotatedCoordinate.z = zRotation.multiply(this).summate();
 
         return rotatedCoordinate;
     }
@@ -161,9 +178,9 @@ class Coordinate {
         zRotation.y = 0;
         zRotation.z = Math.cos(angle);
 
-        rotatedCoordinate.x = xRotation.scale(this.x).summate();
-        rotatedCoordinate.y = yRotation.scale(this.y).summate();
-        rotatedCoordinate.z = zRotation.scale(this.z).summate();
+        rotatedCoordinate.x = xRotation.multiply(this).summate();
+        rotatedCoordinate.y = yRotation.multiply(this).summate();
+        rotatedCoordinate.z = zRotation.multiply(this).summate();
 
         return rotatedCoordinate;
     }
@@ -177,7 +194,7 @@ class Coordinate {
         let rotatedCoordinate = new Coordinate ();
         let xRotation = new Coordinate ();
         xRotation.x = Math.cos(angle);
-        xRotation.y = -Math.sin(angle);;
+        xRotation.y = -Math.sin(angle);
         xRotation.z = 0;
         let yRotation = new Coordinate ();
         yRotation.x = Math.sin(angle);
@@ -188,9 +205,9 @@ class Coordinate {
         zRotation.y = 0;
         zRotation.z = 1;
 
-        rotatedCoordinate.x = xRotation.scale(this.x).summate();
-        rotatedCoordinate.y = yRotation.scale(this.y).summate();
-        rotatedCoordinate.z = zRotation.scale(this.z).summate();
+        rotatedCoordinate.x = xRotation.multiply(this).summate();
+        rotatedCoordinate.y = yRotation.multiply(this).summate();
+        rotatedCoordinate.z = zRotation.multiply(this).summate();
 
         return rotatedCoordinate;
     }
@@ -203,10 +220,11 @@ class Coordinate {
      */
     rotate (angle,anchorpoint) {
         let rotatedCoordinate = new Coordinate ();
+        let scaledAngle = angle.scale(Coordinate.angleFactor);
         rotatedCoordinate.assign(this.difference(anchorpoint));
-        rotatedCoordinate.assign(rotatedCoordinate.rotateX(angle.x));
-        rotatedCoordinate.assign(rotatedCoordinate.rotateY(angle.y));
-        rotatedCoordinate.assign(rotatedCoordinate.rotateZ(angle.z));
+        rotatedCoordinate.assign(rotatedCoordinate.rotateX(scaledAngle.x));
+        rotatedCoordinate.assign(rotatedCoordinate.rotateY(scaledAngle.y));
+        rotatedCoordinate.assign(rotatedCoordinate.rotateZ(scaledAngle.z));
         return rotatedCoordinate;
     }
 
@@ -323,6 +341,26 @@ class Coordinate {
     }
 
     /**
+     * Calculates the absolute value.
+     * @param {Coordinate} coordinate coordinate for absolute value
+     * @returns {Coordinate} absolute value
+     */
+    static absoluteValue (coordinate) {
+        return coordinate.absoluteValue();
+    }
+
+    /**
+     * Rotates coordinate around an anchorpoint.
+     * @param {Coordinate} coordinate coordinate to rotate
+     * @param {Coordinate} angle angles of rotation
+     * @param {Coordinate} anchorpoint point to rotate coordinate around
+     * @returns {Coordinate} rotated coordinates
+     */
+    static rotate (coordinate,angle,anchorpoint) {
+        return coordinate.rotate(angle,anchorpoint);
+    }
+
+    /**
      * Compares x,y and z components.
      * @param {Coordinate} coordinateA coordinate compared from
      * @param {Coordinate} coordinateB coordinate compared to
@@ -343,6 +381,9 @@ class Coordinate {
     }
 }
 
+/**
+ * Sprite rendering context using Canvas API.
+ */
 class Canvas {
     dimensions = new Coordinate ();
     width = 0;
@@ -374,17 +415,16 @@ class Canvas {
 
     /**
      * Draws sprites onto the canvas.
-     * @param {Array<Sprite>|Object} sprites sprites to draw
-     * @param {Coordinate} reference the coordinates the sprite is referenced to
-     * @param {Coordinate} referenceAngle the sum of all angles
+     * @param {Array<Sprite>|SubSprites} sprites sprites to draw
+     * @param {Sprite} reference parent sprite for rendering
      * @param {Number} depth depth of subSprite rendering [max 100]
      */
-    render (sprites,reference = new Coordinate (), referenceAngle = new Coordinate, depth = 0) {
+    render (sprites,reference = new Sprite (), depth = 0) {
         if (depth >= this.maxDepth) {
             return;
         }
         Sprite.forEach(sprites,sprite => {
-            this.draw(sprite,reference,referenceAngle,depth + 1);
+            this.draw(sprite,reference,referenceAngle,depth);
         })
     }
 
@@ -400,30 +440,105 @@ class Canvas {
             return;
         }
 
-        if (sprite.options.show) {
-            if (sprite.options.preProcessor) {
+        let absoluteCoordinate = (
+            Coordinate.add(
+                Coordinate.rotate(
+                    Coordinate.scale(
+                        sprite.position,
+                        reference.absoluteDimensions.x
+                    ),
+                    reference.absoluteAngle,
+                    new Coordinate ()
+                ),
+                reference.absolutePosition
+            )
+        );
+        let absoluteDimensions = (
+            Coordinate.scale(
+                sprite.dimensions,
+                reference.absoluteDimensions.x
+            )
+        );
+        let absoluteAngle = (
+            Coordinate.add(
+                sprite.absoluteAngle,
+                reference.absoluteAngle
+            )
+        )
 
+        sprite.drawOptions.deltaAbsoluteCoordinate.assign(
+            Coordinate.difference(absoluteCoordinate,sprite.absolutePosition)
+        );
+        sprite.drawOptions.deltaAbsoluteDimensions.assign(
+            Coordinate.difference(absoluteDimensions,sprite.absoluteDimensions)
+        );
+        sprite.drawOptions.deltaAbsoluteAngle.assign(
+            Coordinate.difference(absoluteAngle,sprite.absoluteDimensions)
+        );
+
+        sprite.drawOptions.deltaPosition.assign(
+            Coordinate.difference(sprite.position,sprite.drawOptions.position)
+        );
+        sprite.drawOptions.deltaDimensions.assign(
+            Coordinate.difference(sprite.dimensions,sprite.drawOptions.dimensions)
+        );
+        sprite.drawOptions.deltaAngle.assign(
+            Coordinate.difference(sprite.angle,sprite.drawOptions.angle)
+        );
+
+        sprite.absolutePosition.assign(absoluteCoordinate);
+        sprite.absoluteDimensions.assign(absoluteDimensions);
+        sprite.absoluteAngle.assign(absoluteAngle);
+
+        sprite.drawOptions.position.assign(sprite.position);
+        sprite.drawOptions.dimensions.assign(sprite.dimensions);
+        sprite.drawOptions.angle.assign(sprite.angle);
+
+        if (sprite.options.show) {
+            let screenCenter = Coordinate.unscale(new Coordinate(this.width,this.height),2);
+            let projectedPosition = Coordinate.unscale(sprite.absolutePosition,sprite.absolutePosition.z);
+            let projectedDimension = Coordinate.unscale(sprite.absoluteDimensions,sprite.absolutePosition.z);
+            let spriteCenter = Coordinate.unscale(projectedDimension,2);
+            let centeredDrawLocation = Coordinate.add(Coordinate.scale(projectedPosition,screenCenter.x),screenCenter);
+            let alignedDrawLocation = Coordinate.difference(centeredDrawLocation,spriteCenter);
+
+
+            if (sprite.options.preProcessor) {
+                sprite.preProcessor.restart();
+                while (!sprite.preProcessor.callNext());
             }
         }
+
+        if (sprite.options.subSprites) {
+            this.render (sprite.subSprites,sprite,depth + 1)
+        }
+
     }
 }
 
+/**
+ * Draweable object with different draw options to customize rendering.
+ */
 class Sprite {
     position;
     angle;
     dimensions;
 
-    absoluteCoordinate = new Coordinate ();
+    absolutePosition = new Coordinate ();
     absoluteAngle = new Coordinate ();
     absoluteDimensions = new Coordinate ();
 
     drawOptions = {
+        position: new Coordinate (),
+        dimensions: new Coordinate (),
+        angle: new Coordinate (),
+
         deltaPosition: new Coordinate (),
         deltaAngle: new Coordinate (),
-        detlaDimensions: new Coordinate (),
+        deltaDimensions: new Coordinate (),
 
         deltaAbsoluteCoordinate: new Coordinate (),
-        deltaAbsoluteCoordinate: new Coordinate (),
+        deltaAbsoluteAngle: new Coordinate (),
         deltaAbsoluteDimensions: new Coordinate ()
     }
 
@@ -441,9 +556,6 @@ class Sprite {
         this.position = position;
         this.angle = angle;
         this.dimensions = dimensions;
-        this.drawOptions.position = this.position;
-        this.drawOptions.angle = this.angle;
-        this.drawOptions.dimensions = this.dimensions;
         this.options.show = show;
     }
 
@@ -529,6 +641,10 @@ class Sprite {
         this.toggleOption("particleEmitter","active");
     }
 
+    /**
+     * Adds and enables subSprites on this sprite.
+     * @param {SubSprites | Array<Sprite>} subSprites subSprites object or array of sprites
+     */
     addSubSprites (subSprites) {
         this.subSprites = subSprites;
         this.toggleOption("subSprites","active");
@@ -545,6 +661,8 @@ class Sprite {
 
     /**
      * @todo not ready for use
+     * Adds and enables preProcessor on this sprite.
+     * @param {ChainedFunctions} preProcessor preProcessor functions executed before during the draw call before showing the sprite
      */
     addPreProcessor (preProcessor) {
         this.preProcessor = preProcessor;
@@ -573,10 +691,10 @@ class Sprite {
      * @returns {Boolean} if the sprites are overlapping
      */
     overlapping (sprite) {
-        let negativeBorderA = this.absoluteCoordinate.difference(this.absoluteDimensions.unscale(2));
-        let positiveBorderA = this.absoluteCoordinate.add(this.absoluteDimensions.unscale(2));
-        let negativeBorderB = sprite.absoluteCoordinate.difference(sprite.absoluteDimensions.unscale(2));
-        let positiveBorderB = sprite.absoluteCoordinate.add(sprite.absoluteDimensions.unscale(2));
+        let negativeBorderA = this.absolutePosition.difference(this.absoluteDimensions.unscale(2));
+        let positiveBorderA = this.absolutePosition.add(this.absoluteDimensions.unscale(2));
+        let negativeBorderB = sprite.absolutePosition.difference(sprite.absoluteDimensions.unscale(2));
+        let positiveBorderB = sprite.absolutePosition.add(sprite.absoluteDimensions.unscale(2));
         let negativeOverlap = positiveBorderB.compare(negativeBorderA);
         let positiveOverlap = positiveBorderA.compare(negativeBorderB);
         if (negativeOverlap.allEqual(1) &&
@@ -624,9 +742,11 @@ class Sprite {
     static localOverlapping (spriteA,spriteB) {
         return spriteA.localOverlapping(spriteB)
     }
-
 }
 
+/**
+ * Collection of functions called in order.
+ */
 class ChainedFunctions {
     functions = []
     pointer = 0;
@@ -635,7 +755,7 @@ class ChainedFunctions {
 
     /**
      * Constructs an chained functions object.
-     * @param {Array<{(*): *}} functions array of chained functions
+     * @param {Array<{(*): *}>} functions array of chained functions
      */
     constructor (functions = []) {
         this.functions = functions;
@@ -663,10 +783,8 @@ class ChainedFunctions {
 
     /**
      * Switches finished to true.
-     * @param {*} val return value
      */
-    return (val = 0) {
-        this.returnVal = val;
+    return () {
         this.finished = true;
     }
 
@@ -678,7 +796,7 @@ class ChainedFunctions {
         if (this.pointer < 0) {
             return false;
         }
-        if (!this.end()) {
+        if (this.end()) {
             return false;
         }
         return functions[pointer];
@@ -686,7 +804,7 @@ class ChainedFunctions {
 
     /**
      * Checks if the pointer has reached the end.
-     * @returns {Boolean} returns if the pointer has reached the end.
+     * @returns {Boolean} returns if the pointer has reached the end
      */
     end () {
         return this.pointer >= this.functions.length;
@@ -738,13 +856,88 @@ class ChainedFunctions {
 
     /**
      * Adds function to the chain.
-     * @param {{(): void}} func function to be added
+     * @param {{(*): *}} func function to be added
      */
     add (func) {
         this.functions.push(func);
     }
+
+    /**
+     * Moves pointer back to the start.
+     */
+    restart () {
+        this.pointer = -1;
+    }
 }
 
+/**
+ * An object to manage multiple chainedFunctions objects.
+ */
+class Thread {
+    tree = [];
+    timeout = 0;
+    args;
+
+    /**
+     * Calls next chained function from the tree.
+     * @returns {Boolean} wether the chained function could be called
+     */
+    callNext () {
+        if (timeout > 0) {
+            this.timeout--;
+            return true;
+        }
+        let chain = this.get();
+        if (!chain) {
+            return true;
+        }
+        chain.callNext(this.args);
+        this.args = chain.returnVal;
+        if (chain.finished) {
+            this.tree.pop();
+        }
+        return false;
+    }
+
+    /**
+     * Checks if the tree is empty.
+     * @returns {Boolean} wether the tree is empty or not
+     */
+    empty () {
+        return this.tree.length <= 0;
+    }
+
+    /**
+     * Fetches the current chained function.
+     * @returns {ChainedFunctions | false} returns the fetched chained function
+     */
+    get () {
+        if (this.empty()) {
+            return false;
+        }
+        return this.tree[this.tree.length - 1];
+    }
+
+    /**
+     * Pushes chained functions onto the thread tree
+     * @param {ChainedFunctions} chain chain functions to be pushed
+     */
+    push (chain) {
+        this.tree.push (chain);
+    }
+
+    /**
+     * Postpones the execution of the callNext function.
+     * @param {Number} calls number of callNext function call the execution should be postponed by
+     */
+    postpone (calls = 1) {
+        this.timeout = calls;
+    }
+}
+
+/**
+ * Iterable collection of sprites.
+ */
 class SubSprites {
     /**
      * Creates a subSprites object.
@@ -765,8 +958,8 @@ class SubSprites {
     }
 
     /**
-     * Calls the callback for each sprite in the Array or Object.
-     * @param {Array<Sprite>|Object} sprites Array or Object to iterate over.
+     * Calls the callback for each sprite in the Array or subSprites object.
+     * @param {Array<Sprite>|SubSprites} sprites Array or subSprites object to iterate over.
      * @param {{(sprite: Sprite, key: String | Number) : void}} callback Called for each sprite once.
      */
     static forEach (sprites,callback) {
@@ -792,6 +985,9 @@ class SubSprites {
     }
 }
 
+/**
+ * String with draw information.
+ */
 class FormattedString {
     color;
     fontSize;
@@ -894,6 +1090,9 @@ class FormattedString {
     }
 }
 
+/**
+ * Collection of formattedStrings.
+ */
 class FormattedText {
     text = [];
 

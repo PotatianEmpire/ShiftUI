@@ -557,7 +557,7 @@ class SpriteOld {
     }
 } 
 
-class Thread {
+class ThreadOld {
 
     /**
      * 
