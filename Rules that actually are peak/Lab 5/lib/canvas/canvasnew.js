@@ -390,6 +390,8 @@ class Canvas {
     height = 0;
     maxDepth = 100;
 
+    static screenSprite = new Sprite ();
+
     /**
      * @type {CanvasRenderingContext2D}
      */
@@ -429,12 +431,12 @@ class Canvas {
     }
 
     /**
-     * Draws the sprite onto the canvas.
-     * @param {Sprite} sprite sprite to draw
-     * @param {Sprite} reference parent sprite for rendering
-     * @param {Number} depth depth of subSprite rendering [max 100]
+     * Calculates position and dimension of sprite.
+     * @param {Sprite} sprite sprite to calculate
+     * @param {Sprite} reference parent sprite for reference
+     * @param {*} depth depth of subSprite rendering [max 100]
      */
-    draw (sprite,reference = new Sprite (),depth = 0) {
+    calcPos (sprite,reference = ,depth = 0) {
 
         if (depth > this.maxDepth) {
             return;
@@ -464,7 +466,7 @@ class Canvas {
                 sprite.absoluteAngle,
                 reference.absoluteAngle
             )
-        )
+        );
 
         sprite.drawOptions.deltaAbsoluteCoordinate.assign(
             Coordinate.difference(absoluteCoordinate,sprite.absolutePosition)
@@ -494,23 +496,140 @@ class Canvas {
         sprite.drawOptions.dimensions.assign(sprite.dimensions);
         sprite.drawOptions.angle.assign(sprite.angle);
 
-        if (sprite.options.show) {
-            let screenCenter = Coordinate.unscale(new Coordinate(this.width,this.height),2);
-            let projectedPosition = Coordinate.unscale(sprite.absolutePosition,sprite.absolutePosition.z);
-            let projectedDimension = Coordinate.unscale(sprite.absoluteDimensions,sprite.absolutePosition.z);
-            let spriteCenter = Coordinate.unscale(projectedDimension,2);
-            let centeredDrawLocation = Coordinate.add(Coordinate.scale(projectedPosition,screenCenter.x),screenCenter);
-            let alignedDrawLocation = Coordinate.difference(centeredDrawLocation,spriteCenter);
+        let screenCenter = Coordinate.unscale(new Coordinate(this.width,this.height),2);
+        let projectedPosition = Coordinate.unscale(sprite.absolutePosition,sprite.absolutePosition.z + 1);
+        let projectedDimension = Coordinate.unscale(sprite.absoluteDimensions,sprite.absolutePosition.z + 1);
+        let spriteCenter = Coordinate.unscale(projectedDimension,2);
+        let centeredDrawLocation = Coordinate.add(Coordinate.scale(projectedPosition,screenCenter.x),screenCenter);
+        let alignedDrawLocation = Coordinate.difference(spriteCenter,centeredDrawLocation);
+        let drawSize = Coordinate.scale(projectedDimension,screenCenter.x);
 
+        sprite.drawOptions.projectedPosition.assign(projectedPosition);
+        sprite.drawOptions.projectedDimension.assign(projectedDimension);
+        sprite.drawOptions.centeredDrawLocation.assign(centeredDrawLocation);
+        sprite.drawOptions.alignedDrawLocation.assign(alignedDrawLocation);
+        sprite.drawOptions.drawSize.assign(drawSize);
+
+        if (sprite.options.particleEmitter) {
+            sprite.particleEmitter.particles.forEach(particle => {
+                let absoluteParticlePosition = Coordinate.add (
+                    Coordinate.rotate(
+                        Coordinate.scale(
+                            particle.position,
+                            reference.absoluteDimensions.x
+                        ),
+                        reference.absoluteAngle,
+                        new Coordinate ()
+                    ),
+                    reference.absolutePosition
+                );
+                let projectedParticlePosition = Coordinate.unscale (
+                    Coordinate.unscale(absoluteParticlePosition,absoluteParticlePosition.z)
+                );
+                let particleDrawPosition = Coordinate.add (
+                    Coordinate.scale (
+                        projectedParticlePosition,
+                        screenCenter.x
+                    ),
+                    screenCenter
+                );
+                particle.drawOptions.deltaAbsoluteCoordinate.assign(Coordinate.difference(particle.drawOptions.absoluteCoordinate,absoluteParticlePosition));
+                particle.drawOptions.absoluteCoordinate.assign(absoluteParticlePosition);
+                particle.drawOptions.projectedPosition.assign(projectedParticlePosition);
+                particle.drawOptions.particleDrawPosition.assign(particleDrawPosition);
+            })
+        }
+    }
+
+    /**
+     * Draws the sprite onto the canvas.
+     * @param {Sprite} sprite sprite to draw
+     * @param {Number} depth depth of subSprite rendering [max 100]
+     */
+    draw (sprite,depth = 0) {
+
+        if (depth > this.maxDepth) {
+            return;
+        }
+
+        if (sprite.options.show) {
+
+
+            this.context.save();
+
+            this.context.translate(sprite.drawOptions.centeredDrawLocation.x,sprite.drawOptions.centeredDrawLocation.y);
+            this.context.rotate(sprite.absoluteAngle.z);
+            this.context.translate(-sprite.drawOptions.centeredDrawLocation.x,-sprite.drawOptions.centeredDrawLocation.y);
 
             if (sprite.options.preProcessor) {
                 sprite.preProcessor.restart();
                 while (!sprite.preProcessor.callNext());
             }
+
+            if (sprite.options.transparency) {
+                this.context.globalAlpha = sprite.transparency;
+            }
+
+            if (sprite.options.image) {
+                this.context.drawImage(sprite.image,
+                    sprite.drawOptions.alignedDrawLocation.x,
+                    sprite.drawOptions.alignedDrawLocation.y,
+                    sprite.drawOptions.drawSize.x,
+                    sprite.drawOptions.drawSize.y);
+            }
+
+            if (sprite.options.sample) {
+                let sampleLocation = sprite.sample.getAbsoluteLocation();
+                let sampleSize = sprite.sample.getAbsoluteSize();
+                this.context.drawImage(sprite.sample.image,
+                    sampleLocation.x,sampleLocation.y,
+                    sampleSize.x,sampleSize.y,
+                    sprite.drawOptions.alignedDrawLocation.x,
+                    sprite.drawOptions.alignedDrawLocation.y,
+                    sprite.drawOptions.drawSize.x,
+                    sprite.drawOptions.drawSize.y);
+            }
+
+            if (sprite.options.text) {
+                let alignedTextLocation = new Coordinate ();
+                alignedTextLocation.assign(sprite.drawOptions.alignedDrawLocation);
+                sprite.text.text.forEach(formattedString => {
+                    this.context.font = (formattedString.fontSize * drawSize.x) + "px " + formattedString.fontFamily;
+                    this.context.fillStyle = formattedString.color;
+                    this.context.textAlign = formattedString.align;
+                    let formattedStringLocation = new Coordinate ();
+                    formattedStringLocation.assign(alignedTextLocation);
+                    formattedStringLocation.y += (formattedString.lineSpacing * drawSize.x);
+                    switch (formattedString.align) {
+                        case "left":
+                            formattedStringLocation.x = sprite.drawOptions.alignedDrawLocation.x;
+                            break;
+                        case "right":
+                            formattedStringLocation.x += sprite.drawOptions.drawSize.x;
+                            break;
+                        case "center":
+                            formattedStringLocation.x = sprite.drawOptions.centeredDrawLocation.x;
+                            break;
+                    }
+                    this.context.fillText(formattedString.text,
+                        formattedStringLocation.x,
+                        formattedStringLocation.y,
+                        sprite.drawOptions.drawSize.x);
+                })
+            }
+
+            if (sprite.options.particleEmitter) {
+                while (!sprite.particleEmitter.emitter.callNext());
+                sprite.particleEmitter.particles = sprite.particleEmitter.particles.filter(particle => {
+                    this.context.translate(particle.drawOptions.particleDrawPosition.x,particle.drawOptions.particleDrawPosition.y);
+                    while (!particle.behaviour.callNext());
+                    this.context.translate(-particle.drawOptions.particleDrawPosition.x,-particle.drawOptions.particleDrawPosition.y);
+                });
+            }
         }
 
         if (sprite.options.subSprites) {
-            this.render (sprite.subSprites,sprite,depth + 1)
+            this.render (sprite.subSprites,sprite,depth + 1);
         }
 
     }
@@ -536,6 +655,12 @@ class Sprite {
         deltaPosition: new Coordinate (),
         deltaAngle: new Coordinate (),
         deltaDimensions: new Coordinate (),
+
+        projectedPosition: new Coordinate (),
+        centeredDrawLocation: new Coordinate (),
+        projectedDimension: new Coordinate (),
+        alignedDrawLocation: new Coordinate (),
+        drawSize: new Coordinate (),
 
         deltaAbsoluteCoordinate: new Coordinate (),
         deltaAbsoluteAngle: new Coordinate (),
@@ -617,7 +742,7 @@ class Sprite {
 
     /**
      * Adds and enables image on this sprite.
-     * @param {Image} image image added
+     * @param {HTMLImageElement} image image added
      */
     addImage (image) {
         this.image = image;
@@ -634,7 +759,8 @@ class Sprite {
     }
 
     /**
-     * @todo not ready for use
+     * Adds and enables particleEmitter on this sprite.
+     * @param {ParticleEmitter} particleEmitter particleEmitter to be added
      */
     addParticleEmitter (particleEmitter) {
         this.particleEmitter = particleEmitter;
@@ -870,6 +996,78 @@ class ChainedFunctions {
     }
 }
 
+class Particle {
+    behaviour;
+    position;
+
+    destroyed = false;
+
+    drawOptions = {
+        absoluteCoordinate: new Coordinate (),
+        deltaAbsoluteCoordinate: new Coordinate (),
+        projectedPosition: new Coordinate (),
+        particleDrawPosition: new Coordinate ()
+    }
+
+    /**
+     * Creates a particle object.
+     * @param {ChainedFunctions} behaviour iterates every frame
+     * @param {Coordinate} position position of particle
+     */
+    constructor (behaviour,position = new Coordinate ()) {
+        this.behaviour = behaviour;
+        this.position = position;
+    }
+
+    /**
+     * Gets rid of particle object after this frame iteration.
+     */
+    destroy () {
+        this.destroyed = true;
+    }
+
+    /**
+     * Clones the particle.
+     * @param {Coordinate} position position of particle
+     * @returns {Particle} cloned particle
+     */
+    clone (position = this.position) {
+        let clone = new Particle (this.behaviour);
+        clone.position.assign(position);
+        return clone;
+    }
+}
+
+class ParticleEmitter {
+    emitter;
+    particles;
+
+    /**
+     * Creates a particle emitter object.
+     * @param {ChainedFunctions} emitter iterates every frame
+     * @param {Array<Particle>} particles initialize particles
+     */
+    constructor (emitter = new ChainedFunctions (),particles = []) {
+        this.emitter = emitter;
+        this.particles = particles;
+    }
+
+    /**
+     * Creates a particle.
+     * @param {Array<Particle> | Particle} particle particle created
+     */
+    create (particle) {
+        this.particles.push(...particle);
+    }
+
+    /**
+     * Clears all particles.
+     */
+    clear () {
+        this.particles = [];
+    }
+}
+
 /**
  * An object to manage multiple chainedFunctions objects.
  */
@@ -877,6 +1075,14 @@ class Thread {
     tree = [];
     timeout = 0;
     args;
+
+    /**
+     * Creates a thread object.
+     * @param {Array<ChainedFunctions>} tree chainedFunctions to be added
+     */
+    constructor (tree = []) {
+        this.tree = tree;
+    }
 
     /**
      * Calls next chained function from the tree.
@@ -1094,10 +1300,23 @@ class FormattedString {
  * Collection of formattedStrings.
  */
 class FormattedText {
-    text = [];
+    align;
+    text;
 
+    /**
+     * Creates a formattedText object.
+     * @param {Array<FormattedString>} formattedStrings formatted strings to add
+     */
+    constructor (formattedStrings = []) {
+        this.text = formattedStrings;
+    }
+
+    /**
+     * Parses string to formattedText.
+     * @param {String} data string to parse
+     */
     parse (data) {
-        this.text.push(FormattedText.parse(data));
+        this.text.push(...FormattedText.parse(data));
     }
 
     /**
@@ -1118,6 +1337,44 @@ class FormattedText {
     }
 }
 
+/**
+ * Partial sample of a source image.
+ */
+class Sample {
+    sampleLocation;
+    sampleSize;
+    image;
+
+    /**
+     * Creates a sample object.
+     * @param {Coordinate} sampleLocation location of the sample relative to image width
+     * @param {Coordinate} sampleSize size of the sample relative to image width
+     * @param {HTMLImageElement} image image data
+     */
+    constructor (sampleLocation = new Coordinate (),
+                 sampleSize = new Coordinate (),
+                 image = new Image ()) {
+        this.sampleLocation = sampleLocation;
+        this.sampleSize = sampleSize;
+        this.image = image;
+    }
+
+    /**
+     * Calculates the real location of the sample within its source image.
+     * @returns real location of the sample
+     */
+    getAbsoluteLocation () {
+        return this.sampleLocation.scale(this.image.width);
+    }
+
+    /**
+     * Calculates the real size of the sample in its source image.
+     * @returns real size of the sample
+     */
+    getAbsoluteSize () {
+        return this.sampleSize.scale(this.image.width);
+    }
+}
 
 // testing
 
@@ -1126,3 +1383,15 @@ let textTest = FormattedText.parse(`align:right lineSpacing:10 "hi"
     align:left "tom"`);
 
 console.log(textTest);
+
+let sprite = new Sprite ();
+sprite.dimensions.x = 1;
+sprite.dimensions.y = 1;
+sprite.addText(textTest);
+let canvas = new Canvas("view");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+canvas.clear();
+canvas.calcPos(sprite);
+console.log(sprite);
+console.log(canvas);

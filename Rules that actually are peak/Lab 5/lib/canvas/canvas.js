@@ -674,7 +674,7 @@ class ThreadOld {
     }
     
 }
-class Sample {
+class SampleOld {
     constructor (sampleX,sampleY,sampleWidth,sampleHeight,image = new Image()) {
         this.img = image;
         this.sampleX = sampleX;
