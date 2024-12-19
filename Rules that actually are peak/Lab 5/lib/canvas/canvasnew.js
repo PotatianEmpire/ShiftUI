@@ -221,7 +221,7 @@ class Coordinate {
     rotate (angle,anchorpoint) {
         let rotatedCoordinate = new Coordinate ();
         let scaledAngle = angle.scale(Coordinate.angleFactor);
-        rotatedCoordinate.assign(this.difference(anchorpoint));
+        rotatedCoordinate.assign(Coordinate.difference(anchorpoint,this));
         rotatedCoordinate.assign(rotatedCoordinate.rotateX(scaledAngle.x));
         rotatedCoordinate.assign(rotatedCoordinate.rotateY(scaledAngle.y));
         rotatedCoordinate.assign(rotatedCoordinate.rotateZ(scaledAngle.z));
@@ -390,8 +390,6 @@ class Canvas {
     height = 0;
     maxDepth = 100;
 
-    static screenSprite = new Sprite ();
-
     /**
      * @type {CanvasRenderingContext2D}
      */
@@ -416,17 +414,57 @@ class Canvas {
     }
 
     /**
-     * Draws sprites onto the canvas.
-     * @param {Array<Sprite>|SubSprites} sprites sprites to draw
-     * @param {Sprite} reference parent sprite for rendering
+     * Prepares sprites for rendering.
+     * @param {Array<Sprite> | SubSprites | Sprite} sprites sprites to prepare
+     * @param {Sprite} reference sprite position refers to parent sprites
      * @param {Number} depth depth of subSprite rendering [max 100]
      */
-    render (sprites,reference = new Sprite (), depth = 0) {
+    prepareRender (sprites, reference = new Sprite (), depth = 0) {
         if (depth >= this.maxDepth) {
             return;
         }
-        Sprite.forEach(sprites,sprite => {
-            this.draw(sprite,reference,referenceAngle,depth);
+        if (sprites instanceof Sprite) {
+            this.calcPos(sprites,reference);
+
+            if (sprites.options.subSprites) {
+                this.prepareRender(sprites.subSprites,reference,depth + 1);
+            }
+
+            return;
+        }
+        SubSprites.forEach(sprites,sprite => {
+            this.calcPos(sprite,reference);
+
+            if (sprite.options.subSprites) {
+                this.prepareRender(sprite.subSprites,reference,depth + 1);
+            }
+        })
+    }
+
+    /**
+     * Draws sprites onto the canvas.
+     * @param {Array<Sprite> | SubSprites | Sprite} sprites sprites to draw
+     * @param {Number} depth depth of subSprite rendering [max 100]
+     */
+    render (sprites, depth = 0) {
+        if (depth >= this.maxDepth) {
+            return;
+        }
+        if (sprites instanceof Sprite) {
+            this.draw(sprites);
+
+            if (sprites.options.subSprites) {
+                this.render(sprites.subSprites,depth + 1);
+            }
+
+            return;
+        }
+        SubSprites.forEach(sprites,sprite => {
+            this.draw(sprite);
+
+            if (sprite.options.subSprites) {
+                this.render(sprite.subSprites,depth + 1);
+            }
         })
     }
 
@@ -434,20 +472,15 @@ class Canvas {
      * Calculates position and dimension of sprite.
      * @param {Sprite} sprite sprite to calculate
      * @param {Sprite} reference parent sprite for reference
-     * @param {*} depth depth of subSprite rendering [max 100]
      */
-    calcPos (sprite,reference = ,depth = 0) {
-
-        if (depth > this.maxDepth) {
-            return;
-        }
+    calcPos (sprite,reference = new Sprite ()) {
 
         let absoluteCoordinate = (
             Coordinate.add(
                 Coordinate.rotate(
                     Coordinate.scale(
                         sprite.position,
-                        reference.absoluteDimensions.x
+                        reference.absoluteDimensions.x / 2
                     ),
                     reference.absoluteAngle,
                     new Coordinate ()
@@ -458,15 +491,17 @@ class Canvas {
         let absoluteDimensions = (
             Coordinate.scale(
                 sprite.dimensions,
-                reference.absoluteDimensions.x
+                reference.absoluteDimensions.x / 2
             )
         );
         let absoluteAngle = (
             Coordinate.add(
-                sprite.absoluteAngle,
+                sprite.angle,
                 reference.absoluteAngle
             )
         );
+        
+        
 
         sprite.drawOptions.deltaAbsoluteCoordinate.assign(
             Coordinate.difference(absoluteCoordinate,sprite.absolutePosition)
@@ -475,7 +510,7 @@ class Canvas {
             Coordinate.difference(absoluteDimensions,sprite.absoluteDimensions)
         );
         sprite.drawOptions.deltaAbsoluteAngle.assign(
-            Coordinate.difference(absoluteAngle,sprite.absoluteDimensions)
+            Coordinate.difference(absoluteAngle,sprite.absoluteAngle)
         );
 
         sprite.drawOptions.deltaPosition.assign(
@@ -492,17 +527,21 @@ class Canvas {
         sprite.absoluteDimensions.assign(absoluteDimensions);
         sprite.absoluteAngle.assign(absoluteAngle);
 
+
         sprite.drawOptions.position.assign(sprite.position);
         sprite.drawOptions.dimensions.assign(sprite.dimensions);
         sprite.drawOptions.angle.assign(sprite.angle);
 
-        let screenCenter = Coordinate.unscale(new Coordinate(this.width,this.height),2);
+        let screenDimension = new Coordinate(this.width,this.height);
+        let screenCenter = Coordinate.unscale(screenDimension,2);
+
         let projectedPosition = Coordinate.unscale(sprite.absolutePosition,sprite.absolutePosition.z + 1);
         let projectedDimension = Coordinate.unscale(sprite.absoluteDimensions,sprite.absolutePosition.z + 1);
-        let spriteCenter = Coordinate.unscale(projectedDimension,2);
+        let drawSize = Coordinate.scale(projectedDimension,screenCenter.x);
+        let spriteCenter = Coordinate.unscale(drawSize,2);
         let centeredDrawLocation = Coordinate.add(Coordinate.scale(projectedPosition,screenCenter.x),screenCenter);
         let alignedDrawLocation = Coordinate.difference(spriteCenter,centeredDrawLocation);
-        let drawSize = Coordinate.scale(projectedDimension,screenCenter.x);
+        
 
         sprite.drawOptions.projectedPosition.assign(projectedPosition);
         sprite.drawOptions.projectedDimension.assign(projectedDimension);
@@ -544,13 +583,8 @@ class Canvas {
     /**
      * Draws the sprite onto the canvas.
      * @param {Sprite} sprite sprite to draw
-     * @param {Number} depth depth of subSprite rendering [max 100]
      */
-    draw (sprite,depth = 0) {
-
-        if (depth > this.maxDepth) {
-            return;
-        }
+    draw (sprite) {
 
         if (sprite.options.show) {
 
@@ -558,7 +592,7 @@ class Canvas {
             this.context.save();
 
             this.context.translate(sprite.drawOptions.centeredDrawLocation.x,sprite.drawOptions.centeredDrawLocation.y);
-            this.context.rotate(sprite.absoluteAngle.z);
+            this.context.rotate(sprite.absoluteAngle.z * Coordinate.angleFactor);
             this.context.translate(-sprite.drawOptions.centeredDrawLocation.x,-sprite.drawOptions.centeredDrawLocation.y);
 
             if (sprite.options.preProcessor) {
@@ -593,13 +627,13 @@ class Canvas {
             if (sprite.options.text) {
                 let alignedTextLocation = new Coordinate ();
                 alignedTextLocation.assign(sprite.drawOptions.alignedDrawLocation);
-                sprite.text.text.forEach(formattedString => {
-                    this.context.font = (formattedString.fontSize * drawSize.x) + "px " + formattedString.fontFamily;
+                sprite.text.text.forEach((formattedString,i) => {
+                    this.context.font = (formattedString.fontSize * sprite.drawOptions.drawSize.x) + "px " + formattedString.fontFamily;
                     this.context.fillStyle = formattedString.color;
                     this.context.textAlign = formattedString.align;
                     let formattedStringLocation = new Coordinate ();
                     formattedStringLocation.assign(alignedTextLocation);
-                    formattedStringLocation.y += (formattedString.lineSpacing * drawSize.x);
+                    formattedStringLocation.y += (i * formattedString.lineSpacing * sprite.drawOptions.drawSize.x);
                     switch (formattedString.align) {
                         case "left":
                             formattedStringLocation.x = sprite.drawOptions.alignedDrawLocation.x;
@@ -614,24 +648,32 @@ class Canvas {
                     this.context.fillText(formattedString.text,
                         formattedStringLocation.x,
                         formattedStringLocation.y,
-                        sprite.drawOptions.drawSize.x);
+                        sprite.drawOptions.drawSize.x);                    
                 })
             }
 
+            if (sprite.options.postProcessor) {
+                sprite.preProcessor.restart();
+                while (!sprite.preProcessor.callNext());
+            }
+
             if (sprite.options.particleEmitter) {
+                sprite.particleEmitter.emitter.restart();
                 while (!sprite.particleEmitter.emitter.callNext());
                 sprite.particleEmitter.particles = sprite.particleEmitter.particles.filter(particle => {
                     this.context.translate(particle.drawOptions.particleDrawPosition.x,particle.drawOptions.particleDrawPosition.y);
+                    particle.behaviour.restart();
                     while (!particle.behaviour.callNext());
                     this.context.translate(-particle.drawOptions.particleDrawPosition.x,-particle.drawOptions.particleDrawPosition.y);
                 });
             }
         }
 
-        if (sprite.options.subSprites) {
-            this.render (sprite.subSprites,sprite,depth + 1);
-        }
+        this.context.translate(sprite.drawOptions.centeredDrawLocation.x,sprite.drawOptions.centeredDrawLocation.y);
+        this.context.rotate(-sprite.absoluteAngle.z * Coordinate.angleFactor);
+        this.context.translate(-sprite.drawOptions.centeredDrawLocation.x,-sprite.drawOptions.centeredDrawLocation.y);
 
+        this.context.restore();
     }
 }
 
@@ -645,7 +687,7 @@ class Sprite {
 
     absolutePosition = new Coordinate ();
     absoluteAngle = new Coordinate ();
-    absoluteDimensions = new Coordinate ();
+    absoluteDimensions = new Coordinate (2,2,2);
 
     drawOptions = {
         position: new Coordinate (),
@@ -786,7 +828,6 @@ class Sprite {
     }
 
     /**
-     * @todo not ready for use
      * Adds and enables preProcessor on this sprite.
      * @param {ChainedFunctions} preProcessor preProcessor functions executed before during the draw call before showing the sprite
      */
@@ -796,7 +837,8 @@ class Sprite {
     }
     
     /**
-     * @todo not ready for use
+     * Adds and enables postProcessor on this sprite.
+     * @param {ChainedFunctions} postProcessor postProcessor functions executed after during the draw call after rendering before particles
      */
     addPostProcessor (postProcessor) {
         this.postProcessor = postProcessor;
@@ -1212,10 +1254,10 @@ class FormattedString {
      * @param {String} text contents
      */
     constructor (color = "#000000",
-        fontSize = 48,
+        fontSize = 0.1,
         fontFamily = "'serif'",
         align = "left",
-        lineSpacing = 0,
+        lineSpacing = 0.1,
         text = "") {
         this.color = color;
         this.fontSize = fontSize;
@@ -1375,23 +1417,3 @@ class Sample {
         return this.sampleSize.scale(this.image.width);
     }
 }
-
-// testing
-
-let textTest = FormattedText.parse(`align:right lineSpacing:10 "hi"
-    "my name is"
-    align:left "tom"`);
-
-console.log(textTest);
-
-let sprite = new Sprite ();
-sprite.dimensions.x = 1;
-sprite.dimensions.y = 1;
-sprite.addText(textTest);
-let canvas = new Canvas("view");
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-canvas.clear();
-canvas.calcPos(sprite);
-console.log(sprite);
-console.log(canvas);
