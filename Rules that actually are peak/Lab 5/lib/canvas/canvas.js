@@ -1,740 +1,1551 @@
+/**
+ * 3 component vector for rendering.
+ */
+class Coordinate {
+    x;
+    y;
+    z;
 
+    static angleFactor = 2 * Math.PI;
 
-// Might look messy but isn't because it isn't confusing and I can comfortably code and find bugs.
-// If you code for aesthetics you have a problem.
-// You should define clean code by how easy it is to finde bugs and develop further.
-// In that definition this code is perfectly clean.
-// perfectionism is the devil
+    /**
+     * Creates a point in space with x,y and z coordinates.
+     * @param {Number} x initial x value
+     * @param {Number} y initial y value
+     * @param {Number} z initial z value
+     */
+    constructor (x = 0, y = 0, z = 0) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
 
-let canvas = {
+    /**
+     * Calculates the product of each coordinate and the reference.
+     * @param {Number} reference value the coordinates are scaled by.
+     * @returns {Coordinate} the scaled coordiantes.
+     */
+    scale (reference) {
+        let scaledCoord = new Coordinate ();
+        scaledCoord.x = this.x * reference;
+        scaledCoord.y = this.y * reference;
+        scaledCoord.z = this.z * reference;
+        return scaledCoord;
+    }
+    
+    /**
+     * Devides each coordinate by the reference.
+     * @param {Number} reference value the coordinates are unscaled by.
+     * @returns {Coordinate} the unscaled coordinates.
+     */
+    unscale (reference) {
+        let unscaledCoord = new Coordinate ();
+        unscaledCoord.x = this.x / reference;
+        unscaledCoord.y = this.y / reference;
+        unscaledCoord.z = this.z / reference;
+        return unscaledCoord;
+    }
 
-    width: 0,
-    height: 0,
-    referenceHeight: 0,
-    unstaggerOnClear: true,
+    /**
+     * Calculates the distance between two points in euklidian geometry.
+     * @param {Coordinate} coordinates the coordinate the distance is calculated to.
+     * @returns {Number} the distance between the two coordinates.
+     */
+    eukDistance (coordinates) {
+        let coordDiff = this.difference(coordinates);
+        let squaredCoord = coordDiff.square();
+        let sum = squaredCoord.summate();
+        let distance = Math.sqrt(sum);
+        return distance;
+    }
+
+    /**
+     * Calculates the difference between two points.
+     * @param {Coordinate} coordinates subtrahend
+     * @returns {Coordinate} difference
+     */
+    difference (coordinates) {
+        let coordDiff = new Coordinate();
+        coordDiff.x = coordinates.x - this.x;
+        coordDiff.y = coordinates.y - this.y;
+        coordDiff.z = coordinates.z - this.z;
+        return coordDiff;
+    }
+
+    /**
+     * Squares each coordinate.
+     * @returns {Coordinate} the sqaured coordinate.
+     */
+    square () {
+        let sqauredCoord = new Coordinate ();
+        sqauredCoord.x = this.x * this.x;
+        sqauredCoord.y = this.y * this.y;
+        sqauredCoord.z = this.z * this.z;
+        return sqauredCoord;
+    }
+
+    /**
+     * Calculates the sum of x,y and z.
+     * @returns {Number} the sum of all coordinates.
+     */
+    summate () {
+        let sum = this.x + this.y + this.z;
+        return sum;
+    }
+
+    /**
+     * Calculates the sum of two coordinates.
+     * @param {Coordinate} coordinate addend
+     * @returns {Coordinate} sum
+     */
+    add (coordinate) {
+        let sum = new Coordinate ();
+        sum.x = this.x + coordinate.x;
+        sum.y = this.y + coordinate.y;
+        sum.z = this.z + coordinate.z;
+        return sum;
+    }
+
+    /**
+     * Creates the product of two coordinates.
+     * @param {Coordinate} coordinate factor
+     * @returns {Coordinate} product
+     */
+    multiply (coordinate) {
+        let product = new Coordinate ();
+        product.x = this.x * coordinate.x;
+        product.y = this.y * coordinate.y;
+        product.z = this.z * coordinate.z;
+        return product;
+    }
+
+    /**
+     * Calculates absolute value.
+     * @returns {Coordinate} absolute value
+     */
+    absoluteValue () {
+        let absoluteValue = new Coordinate ();
+        absoluteValue.x = Math.abs(this.x);
+        absoluteValue.y = Math.abs(this.y);
+        absoluteValue.z = Math.abs(this.z);
+        return absoluteValue;
+    }
+
+    /**
+     * Rotates the coordinate around 0 around the x axis.
+     * @param {Number} angle angle along the x axis
+     * @returns {Coordinate} rotated coordinate
+     */
+    rotateX (angle) {
+        let rotatedCoordinate = new Coordinate ();
+        let xRotation = new Coordinate ();
+        xRotation.x = 1;
+        xRotation.y = 0;
+        xRotation.z = 0;
+        let yRotation = new Coordinate ();
+        yRotation.x = 0;
+        yRotation.y = Math.cos(angle);
+        yRotation.z = Math.sin(angle);
+        let zRotation = new Coordinate ();
+        zRotation.x = 0;
+        zRotation.y = -Math.sin(angle);
+        zRotation.z = Math.cos(angle);
+
+        rotatedCoordinate.x = xRotation.multiply(this).summate();
+        rotatedCoordinate.y = yRotation.multiply(this).summate();
+        rotatedCoordinate.z = zRotation.multiply(this).summate();
+
+        return rotatedCoordinate;
+    }
+    
+    /**
+     * Rotates the coordinate around 0 around the y axis.
+     * @param {Number} angle angle along the y axis
+     * @returns {Coordinate} rotated coordinate
+     */
+    rotateY (angle) {
+        let rotatedCoordinate = new Coordinate ();
+        let xRotation = new Coordinate ();
+        xRotation.x = Math.cos(angle);
+        xRotation.y = 0;
+        xRotation.z = -Math.sin(angle);
+        let yRotation = new Coordinate ();
+        yRotation.x = 0;
+        yRotation.y = 1;
+        yRotation.z = 0;
+        let zRotation = new Coordinate ();
+        zRotation.x = Math.sin(angle);
+        zRotation.y = 0;
+        zRotation.z = Math.cos(angle);
+
+        rotatedCoordinate.x = xRotation.multiply(this).summate();
+        rotatedCoordinate.y = yRotation.multiply(this).summate();
+        rotatedCoordinate.z = zRotation.multiply(this).summate();
+
+        return rotatedCoordinate;
+    }
+    
+    /**
+     * Rotates the coordinate around 0 around the z axis.
+     * @param {Number} angle angle along the z axis
+     * @returns {Coordinate} rotated coordinate
+     */
+    rotateZ (angle) {
+        let rotatedCoordinate = new Coordinate ();
+        let xRotation = new Coordinate ();
+        xRotation.x = Math.cos(angle);
+        xRotation.y = -Math.sin(angle);
+        xRotation.z = 0;
+        let yRotation = new Coordinate ();
+        yRotation.x = Math.sin(angle);
+        yRotation.y = Math.cos(angle);
+        yRotation.z = 0;
+        let zRotation = new Coordinate ();
+        zRotation.x = 0;
+        zRotation.y = 0;
+        zRotation.z = 1;
+
+        rotatedCoordinate.x = xRotation.multiply(this).summate();
+        rotatedCoordinate.y = yRotation.multiply(this).summate();
+        rotatedCoordinate.z = zRotation.multiply(this).summate();
+
+        return rotatedCoordinate;
+    }
+
+    /**
+     * Rotates the coordinates around an anchorpoint.
+     * @param {Coordinate} angle angles on each axis
+     * @param {Coordinate} anchorpoint rotation 
+     * @returns {Coordinate} rotated coordinate
+     */
+    rotate (angle,anchorpoint) {
+        let rotatedCoordinate = new Coordinate ();
+        let scaledAngle = angle.scale(Coordinate.angleFactor);
+        rotatedCoordinate.assign(Coordinate.difference(anchorpoint,this));
+        rotatedCoordinate.assign(rotatedCoordinate.rotateX(scaledAngle.x));
+        rotatedCoordinate.assign(rotatedCoordinate.rotateY(scaledAngle.y));
+        rotatedCoordinate.assign(rotatedCoordinate.rotateZ(scaledAngle.z));
+        return rotatedCoordinate;
+    }
+
+    /**
+     * Copies coordinate to self.
+     * @param {Coordinate} coordinate coordinate copied from
+     */
+    assign (coordinate) {
+        this.x = coordinate.x;
+        this.y = coordinate.y;
+        this.z = coordinate.z;
+    }
+
+    /**
+     * Compares x,y and z components.
+     * @param {Coordinate} coordinate coordinate compared to
+     * @returns {Coordinate} x,y,z components are assigned -1 for smaller, 0 for equals, 1 for larger 
+     */
+    compare (coordinate) {
+        let comparisonCoordinate = new Coordinate ();
+        comparisonCoordinate.x = this.x > coordinate.x ? 1 : (this.x == coordinate.x ? 0 : -1);
+        comparisonCoordinate.y = this.y > coordinate.y ? 1 : (this.y == coordinate.y ? 0 : -1);
+        comparisonCoordinate.z = this.z > coordinate.z ? 1 : (this.z == coordinate.z ? 0 : -1);
+        return comparisonCoordinate;
+    }
+
+    /**
+     * Compares coordinate components with the reference.
+     * @param {Number} reference coordinate components compared to
+     * @returns {Boolean} if all components equal the reference
+     */
+    allEqual (reference) {
+        return this.x == reference &&
+               this.y == reference &&
+               this.z == reference;
+    }
+
+    /**
+     * Scales coordinates by reference.
+     * @param {Coordinate} coordinate coordinate to scale from
+     * @param {Number} reference reference scaled by
+     * @returns scaled coordinates
+     */
+    static scale (coordinate,reference) {
+        return coordinate.scale(reference);
+    }
+
+    /**
+     * Unscales coordinates by reference.
+     * @param {Coordinate} coordinate coordinate to unscale
+     * @param {Number} reference reference unscaled by
+     * @returns unscaled coordinates
+     */
+    static unscale (coordinate,reference) {
+        return coordinate.unscale(reference);
+    }
+
+    /**
+     * Calculates the distance between two points.
+     * @param {Coordinate} coordinateA point distance is measured from
+     * @param {Coordinate} coordinateB point distance is measured to
+     * @returns {Number} the distance between pointA and pointB
+     */
+    static eukDistance (coordinateA,coordinateB) {
+        return coordinateA.eukDistance(coordinateB);
+    }
+
+    /**
+     * Calculates the difference between two points.
+     * @param {Coordinate} coordinateA coordinate to subtract from
+     * @param {Coordinate} coordinateB subtrahend
+     * @returns {Coordinate} difference
+     */
+    static difference (coordinateA,coordinateB) {
+        return coordinateA.difference(coordinateB);
+    }
+
+    /**
+     * Sqaures the coordinate.
+     * @param {Coordinate} coordinate coordinate to square
+     * @returns {Coordinate} squared coordinate
+     */
+    static square (coordinate) {
+        return coordinate.square();
+    }
+
+    /**
+     * Calculates the sum of x,y and z.
+     * @param {Coordinate} coordinate coordinate to summate
+     * @returns {Coordinate} the sum of coordinates
+     */
+    static summate (coordinate) {
+        return coordinate.summate();
+    }
+
+    /**
+     * Calculates the sum of two coordinates.
+     * @param {Coordinate} coordinateA coordinate to add to
+     * @param {Coordinate} coordinateB coordinate added
+     * @returns {Coordinate} sum of coordinateA and coordinateB
+     */
+    static add (coordinateA,coordinateB) {
+        return coordinateA.add(coordinateB);
+    }
+
+    /**
+     * Calculates the product of two coordinates.
+     * @param {Coordinate} coordinateA factor
+     * @param {Coordinate} coordinateB factor
+     * @returns {Coordinate} product of coordinateA and coordinateB
+     */
+    static multiply (coordinateA,coordinateB) {
+        return coordinateA.multiply(coordinateB);
+    }
+
+    /**
+     * Calculates the absolute value.
+     * @param {Coordinate} coordinate coordinate for absolute value
+     * @returns {Coordinate} absolute value
+     */
+    static absoluteValue (coordinate) {
+        return coordinate.absoluteValue();
+    }
+
+    /**
+     * Rotates coordinate around an anchorpoint.
+     * @param {Coordinate} coordinate coordinate to rotate
+     * @param {Coordinate} angle angles of rotation
+     * @param {Coordinate} anchorpoint point to rotate coordinate around
+     * @returns {Coordinate} rotated coordinates
+     */
+    static rotate (coordinate,angle,anchorpoint) {
+        return coordinate.rotate(angle,anchorpoint);
+    }
+
+    /**
+     * Compares x,y and z components.
+     * @param {Coordinate} coordinateA coordinate compared from
+     * @param {Coordinate} coordinateB coordinate compared to
+     * @returns {Coordinate} x,y,z components are assigned -1 for smaller, 0 for equals, 1 for larger 
+     */
+    static compare (coordinateA,coordinateB) {
+        return coordinateA.compare(coordinateB);
+    }
+
+    /**
+     * Compares coordinate components with the reference.
+     * @param {Coordinate} coordinate coordinate components compared
+     * @param {Number} reference coordinate components compared to
+     * @returns {Boolean} if all components equal the reference
+     */
+    static allEqual (coordinate,reference) {
+        return coordinate.allEqual(reference);
+    }
+}
+
+/**
+ * Sprite rendering context using Canvas API.
+ */
+class Canvas {
+    dimensions = new Coordinate ();
+    width = 0;
+    height = 0;
+    maxDepth = 100;
+
     /**
      * @type {CanvasRenderingContext2D}
      */
-    context: document.getElementById("view").getContext("2d"),
-    
+    context;
+
     /**
-     * 
-     * @param {Sprite} sprite 
-     * @param {*} x 
-     * @param {*} y 
-     * @param {*} reference
-     * @param {{angle: Number,px: Number,py: Number}} referenceAngle
-     * @param {Number} depth recursion depth starting point for subSprites (max recursion depth = 100)
+     * Creates an interface for rendering sprites and other features.
+     * @param {String} id id of the canvas element
      */
-    draw(sprite,x,y,reference,referenceAngle,depth){
-        if(sprite.thread) {
-            if(sprite.thread.origin && !sprite.thread.paused) {
-                const nextFrame = {next: false};
-                while (!nextFrame.next) {
-                    if (sprite.thread.getNext(nextFrame)) {
-                        nextFrame.next = true;
-                        sprite.thread.on = true;
-                    };
-                }
-            }
-        }
-        if (sprite.deactivated)
+    constructor (id) {
+        this.context = document.getElementById(id).getContext("2d");
+    }
+
+    /**
+     * Clears the screen and adjusts canvas size.
+     */
+    clear () {
+        this.context.canvas.height = this.height;
+        this.context.canvas.width = this.width;
+        this.dimensions.y = this.height / this.width;
+        this.context.clearRect(0,0,this.width,this.height);
+    }
+
+    /**
+     * Scans all sprites for threads
+     * @param {Array<Sprite> | SubSprites | Sprite} sprites sprites that may have threads wanting to be run
+     * @param {Number} depth depth of subSprite threading [max 100]
+     */
+    runThreads (sprites,depth = 0) {
+        if (depth >= this.maxDepth) {
             return;
-        if(sprite.main instanceof ActivatedFunction) {
-            if(sprite.main.active) {
-                if(sprite.main.wasActivated())
-                    sprite.main.init(sprite);
-                sprite.main.func(sprite);
+        }
+        if (sprites instanceof Sprite) {
+            if (!sprites.options.thread) {
+                return;
             }
-        }
-        if(sprite.animation instanceof ActivatedFunction) {
-            if (sprite.animation.active &&
-                !sprite.animation.paused &&
-                sprite.animation.timeout < 1 &&
-                sprite.animation.frame % sprite.animation.interval == 0) {
-                if (sprite.animation.wasActivated ()) {
-                    sprite.animation.init(sprite,sprite.animation);
-                }
-                sprite.animation.func(sprite,sprite.animation);
-                sprite.animation.timeout--;
-            }
-            if (!sprite.animation.paused)
-                sprite.animation.frame++;
-        }
-        if (!sprite.x)
-            sprite.x = 0;
-        if (!sprite.y)
-            sprite.y = 0;
-        if (!sprite.width)
-            sprite.width = 0;
-        if (!sprite.height)
-            sprite.height = 0;
-        let scaledX, scaledY, scaledWidth, scaledHeight;
-        if (sprite.z) {
-            scaledX = this.scale((this.localScale(sprite.x,reference) + x - 0.5) / (1 + this.localScale(sprite.z,reference))) + this.width / 2;
-            scaledY = this.scale((this.localScale(sprite.y,reference) + y - this.unscale(this.height)/2) / (1 + this.localScale(sprite.z,reference))) + this.height / 2;
-            scaledWidth = this.scale((this.localScale(sprite.width,reference)) / (1 + this.localScale(sprite.z,reference)));
-            scaledHeight = this.scale((this.localScale(sprite.height,reference)) / (1 + this.localScale(sprite.z,reference)));
-        } else {
-            scaledX = this.scale(this.localScale(sprite.x,reference) + x);
-            scaledY = this.scale(this.localScale(sprite.y,reference) + y);
-            scaledWidth = this.scale(this.localScale(sprite.width,reference));
-            scaledHeight = this.scale(this.localScale(sprite.height,reference));
-        }
 
-        this.context.save();
-        if(sprite.angle) {
-            this.context.translate(scaledX,scaledY);
-            this.context.rotate(sprite.angle*2*Math.PI);
-            this.context.translate(-scaledX,-scaledY);
-        }
+            while (!sprites.thread.callNext());
 
-        if(sprite.transparency)
-            this.context.globalAlpha = sprite.transparency;
-        if(sprite.img)
-            this.context.drawImage(sprite.img,
-                scaledX - scaledWidth / 2,
-                scaledY - scaledHeight / 2,
-                scaledWidth,
-                scaledHeight);
-        if(sprite.sample)
-            this.context.drawImage(sprite.sample.img,
-                this.localScale(sprite.sample.sampleX,sprite.sample.img.width),
-                this.localScale(sprite.sample.sampleY,sprite.sample.img.height),
-                this.localScale(sprite.sample.sampleWidth,sprite.sample.img.width),
-                this.localScale(sprite.sample.sampleHeight,sprite.sample.img.height),
-                scaledX - scaledWidth / 2,
-                scaledY - scaledHeight / 2,
-                scaledWidth,
-                scaledHeight);
-        if(sprite.text) {
-            let offset = 0;
-            if(sprite.align == "top")
-                offset = -this.scale(sprite.height/2);
-            let style = {
-                fontSize: 48,
-                fontFamily: "'serif'",
-                color: "#000000",
-                align: "left"
+            if (sprites.options.subSprites) {
+                this.runThreads(sprites.subSprites,depth + 1);
             }
-            sprite.text.split("\n").forEach((val,i) => {
-                let valArr = val.split('"');
-                let text = valArr[0];
-                let styleArr = valArr[0].split(" ");
-                styleArr = styleArr.filter((val,i) => val != "");
-                for (let i = 0; i < styleArr.length; i++) {
-                    const element = styleArr[i];
-                    const typeDenominator = element.charAt(0);
-                    switch (typeDenominator) {
-                        case "#":
-                            style.color = element;
-                            break;
-                        case "'":
-                            if (document.fonts.check("10px " + element))
-                                style.fontFamily = element;
-                            break;
-                        default:
-                            if (parseFloat(element) > 0) {
-                                style.fontSize = this.scale(parseFloat(element));
-                                break;
-                            }
-                            style.align = element;
-                            break;
-                    }
-                }
-                this.context.font = style.fontSize + "px " + style.fontFamily;
-                this.context.fillStyle = style.color;
-                this.context.textAlign = style.align;
-                if (valArr.length > 1){
-                    valArr.shift();
-                    valArr.pop();
-                    text = valArr.join("\"");
-                }
-                this.context.fillText(text,scaledX,scaledY + offset);
-                if (!sprite.textBoxHeightScale)
-                    sprite.textBoxHeightScale = 1.1
-                let offsetAmount = style.fontSize * sprite.textBoxHeightScale;
-                offset += offsetAmount;
+
+            return;
+        }
+        SubSprites.forEach(sprites,sprite => {
+            if (!sprite.options.thread) {
+                return;
+            }
+
+            while (!sprite.thread.callNext());
+
+            if (sprite.options.subSprites) {
+                this.runThreads(sprite.subSprites,depth + 1);
+            }
+        })
+    }
+
+    /**
+     * Prepares sprites for rendering.
+     * @param {Array<Sprite> | SubSprites | Sprite} sprites sprites to prepare
+     * @param {Sprite} reference sprite position refers to parent sprites
+     * @param {Number} depth depth of subSprite rendering [max 100]
+     */
+    prepareRender (sprites, reference = new Sprite (), depth = 0) {
+        if (depth >= this.maxDepth) {
+            return;
+        }
+        if (sprites instanceof Sprite) {
+            this.calcPos(sprites,reference);
+
+            if (sprites.options.subSprites) {
+                this.prepareRender(sprites.subSprites,reference,depth + 1);
+            }
+
+            return;
+        }
+        SubSprites.forEach(sprites,sprite => {
+            this.calcPos(sprite,reference);
+
+            if (sprite.options.subSprites) {
+                this.prepareRender(sprite.subSprites,reference,depth + 1);
+            }
+        })
+    }
+
+    /**
+     * Draws sprites onto the canvas.
+     * @param {Array<Sprite> | SubSprites | Sprite} sprites sprites to draw
+     * @param {Number} depth depth of subSprite rendering [max 100]
+     */
+    render (sprites, depth = 0) {
+        if (depth >= this.maxDepth) {
+            return;
+        }
+        if (sprites instanceof Sprite) {
+            this.draw(sprites);
+
+            if (sprites.options.subSprites) {
+                this.render(sprites.subSprites,depth + 1);
+            }
+
+            return;
+        }
+        SubSprites.forEach(sprites,sprite => {
+            this.draw(sprite);
+
+            if (sprite.options.subSprites) {
+                this.render(sprite.subSprites,depth + 1);
+            }
+        })
+    }
+
+    /**
+     * Calculates position and dimension of sprite.
+     * @param {Sprite} sprite sprite to calculate
+     * @param {Sprite} reference parent sprite for reference
+     */
+    calcPos (sprite,reference = new Sprite ()) {
+
+        let absoluteCoordinate = (
+            Coordinate.add(
+                Coordinate.rotate(
+                    Coordinate.scale(
+                        sprite.position,
+                        reference.absoluteDimensions.x / 2
+                    ),
+                    reference.absoluteAngle,
+                    new Coordinate ()
+                ),
+                reference.absolutePosition
+            )
+        );
+        let absoluteDimensions = (
+            Coordinate.scale(
+                sprite.dimensions,
+                reference.absoluteDimensions.x / 2
+            )
+        );
+        let absoluteAngle = (
+            Coordinate.add(
+                sprite.angle,
+                reference.absoluteAngle
+            )
+        );
+        
+        
+
+        sprite.drawOptions.deltaAbsoluteCoordinate.assign(
+            Coordinate.difference(absoluteCoordinate,sprite.absolutePosition)
+        );
+        sprite.drawOptions.deltaAbsoluteDimensions.assign(
+            Coordinate.difference(absoluteDimensions,sprite.absoluteDimensions)
+        );
+        sprite.drawOptions.deltaAbsoluteAngle.assign(
+            Coordinate.difference(absoluteAngle,sprite.absoluteAngle)
+        );
+
+        sprite.drawOptions.deltaPosition.assign(
+            Coordinate.difference(sprite.position,sprite.drawOptions.position)
+        );
+        sprite.drawOptions.deltaDimensions.assign(
+            Coordinate.difference(sprite.dimensions,sprite.drawOptions.dimensions)
+        );
+        sprite.drawOptions.deltaAngle.assign(
+            Coordinate.difference(sprite.angle,sprite.drawOptions.angle)
+        );
+
+        sprite.absolutePosition.assign(absoluteCoordinate);
+        sprite.absoluteDimensions.assign(absoluteDimensions);
+        sprite.absoluteAngle.assign(absoluteAngle);
+
+
+        sprite.drawOptions.position.assign(sprite.position);
+        sprite.drawOptions.dimensions.assign(sprite.dimensions);
+        sprite.drawOptions.angle.assign(sprite.angle);
+
+        let screenDimension = new Coordinate(this.width,this.height);
+        let screenCenter = Coordinate.unscale(screenDimension,2);
+
+        let projectedPosition = Coordinate.unscale(sprite.absolutePosition,sprite.absolutePosition.z + 1);
+        let projectedDimension = Coordinate.unscale(sprite.absoluteDimensions,sprite.absolutePosition.z + 1);
+        let drawSize = Coordinate.scale(projectedDimension,screenCenter.x);
+        let spriteCenter = Coordinate.unscale(drawSize,2);
+        let centeredDrawLocation = Coordinate.add(Coordinate.scale(projectedPosition,screenCenter.x),screenCenter);
+        let alignedDrawLocation = Coordinate.difference(spriteCenter,centeredDrawLocation);
+        
+
+        sprite.drawOptions.projectedPosition.assign(projectedPosition);
+        sprite.drawOptions.projectedDimension.assign(projectedDimension);
+        sprite.drawOptions.centeredDrawLocation.assign(centeredDrawLocation);
+        sprite.drawOptions.alignedDrawLocation.assign(alignedDrawLocation);
+        sprite.drawOptions.drawSize.assign(drawSize);
+
+        if (sprite.options.particleEmitter) {
+            sprite.particleEmitter.particles.forEach(particle => {
+                let absoluteParticlePosition = Coordinate.add (
+                    Coordinate.rotate(
+                        Coordinate.scale(
+                            particle.position,
+                            reference.absoluteDimensions.x
+                        ),
+                        reference.absoluteAngle,
+                        new Coordinate ()
+                    ),
+                    reference.absolutePosition
+                );
+                let projectedParticlePosition = Coordinate.unscale (
+                    Coordinate.unscale(absoluteParticlePosition,absoluteParticlePosition.z)
+                );
+                let particleDrawPosition = Coordinate.add (
+                    Coordinate.scale (
+                        projectedParticlePosition,
+                        screenCenter.x
+                    ),
+                    screenCenter
+                );
+                particle.drawOptions.deltaAbsoluteCoordinate.assign(Coordinate.difference(particle.drawOptions.absoluteCoordinate,absoluteParticlePosition));
+                particle.drawOptions.absoluteCoordinate.assign(absoluteParticlePosition);
+                particle.drawOptions.projectedPosition.assign(projectedParticlePosition);
+                particle.drawOptions.particleDrawPosition.assign(particleDrawPosition);
             })
         }
-        if (typeof sprite.particleEmitter == "function" &&
-            typeof sprite.particleIterator == "function"
-        ) {
-            sprite.particleEmitter(sprite.particles);
-            if (sprite.particles)
-                sprite.particles = sprite.particles.filter((val,id) => {
-                    sprite.particleIterator(val);
-                    return !val.delete;
+    }
+
+    /**
+     * Draws the sprite onto the canvas.
+     * @param {Sprite} sprite sprite to draw
+     */
+    draw (sprite) {
+
+        if (sprite.options.show) {
+
+
+            this.context.save();
+
+            this.context.translate(sprite.drawOptions.centeredDrawLocation.x,sprite.drawOptions.centeredDrawLocation.y);
+            this.context.rotate(sprite.absoluteAngle.z * Coordinate.angleFactor);
+            this.context.translate(-sprite.drawOptions.centeredDrawLocation.x,-sprite.drawOptions.centeredDrawLocation.y);
+
+            if (sprite.options.preProcessor) {
+                sprite.preProcessor.restart();
+                while (!sprite.preProcessor.callNext());
+            }
+
+            if (sprite.options.transparency) {
+                this.context.globalAlpha = sprite.transparency;
+            }
+
+            if (sprite.options.image) {
+                this.context.drawImage(sprite.image,
+                    sprite.drawOptions.alignedDrawLocation.x,
+                    sprite.drawOptions.alignedDrawLocation.y,
+                    sprite.drawOptions.drawSize.x,
+                    sprite.drawOptions.drawSize.y);
+            }
+
+            if (sprite.options.sample) {
+                let sampleLocation = sprite.sample.getAbsoluteLocation();
+                let sampleSize = sprite.sample.getAbsoluteSize();
+                this.context.drawImage(sprite.sample.image,
+                    sampleLocation.x,sampleLocation.y,
+                    sampleSize.x,sampleSize.y,
+                    sprite.drawOptions.alignedDrawLocation.x,
+                    sprite.drawOptions.alignedDrawLocation.y,
+                    sprite.drawOptions.drawSize.x,
+                    sprite.drawOptions.drawSize.y);
+            }
+
+            if (sprite.options.text) {
+                let alignedTextLocation = new Coordinate ();
+                alignedTextLocation.assign(sprite.drawOptions.alignedDrawLocation);
+                sprite.text.text.forEach((formattedString,i) => {
+                    this.context.font = (formattedString.fontSize * sprite.drawOptions.drawSize.x) + "px " + formattedString.fontFamily;
+                    this.context.fillStyle = formattedString.color;
+                    this.context.textAlign = formattedString.align;
+                    let formattedStringLocation = new Coordinate ();
+                    formattedStringLocation.assign(alignedTextLocation);
+                    formattedStringLocation.y += (i * formattedString.lineSpacing * sprite.drawOptions.drawSize.x);
+                    switch (formattedString.align) {
+                        case "left":
+                            formattedStringLocation.x = sprite.drawOptions.alignedDrawLocation.x;
+                            break;
+                        case "right":
+                            formattedStringLocation.x += sprite.drawOptions.drawSize.x;
+                            break;
+                        case "center":
+                            formattedStringLocation.x = sprite.drawOptions.centeredDrawLocation.x;
+                            break;
+                    }
+                    this.context.fillText(formattedString.text,
+                        formattedStringLocation.x,
+                        formattedStringLocation.y,
+                        sprite.drawOptions.drawSize.x);                    
+                })
+            }
+
+            if (sprite.options.postProcessor) {
+                sprite.preProcessor.restart();
+                while (!sprite.preProcessor.callNext());
+            }
+
+            if (sprite.options.particleEmitter) {
+                sprite.particleEmitter.emitter.restart();
+                while (!sprite.particleEmitter.emitter.callNext());
+                sprite.particleEmitter.particles = sprite.particleEmitter.particles.filter(particle => {
+                    this.context.translate(particle.drawOptions.particleDrawPosition.x,particle.drawOptions.particleDrawPosition.y);
+                    particle.behaviour.restart();
+                    while (!particle.behaviour.callNext());
+                    this.context.translate(-particle.drawOptions.particleDrawPosition.x,-particle.drawOptions.particleDrawPosition.y);
                 });
-        }
-
-        if (!sprite.absoluteCoordinates)
-            sprite.absoluteCoordinates = {width: 0,height: 0, x: 0, y: 0, angle: 0};
-
-        let distance = canvas.calcDistance(canvas.unscale(scaledX),canvas.unscale(scaledY),referenceAngle.px,referenceAngle.py);
-        sprite.absoluteCoordinates.width = scaledWidth;
-        sprite.absoluteCoordinates.height = scaledHeight;
-        sprite.absoluteCoordinates.x = ((distance) * Math.cos(referenceAngle.angle * Math.PI * 2)) + referenceAngle.px;
-        sprite.absoluteCoordinates.y = ((distance) * Math.sin(referenceAngle.angle * Math.PI * 2)) + referenceAngle.py;
-        sprite.absoluteCoordinates.angle = referenceAngle.angle + (sprite.angle? sprite.angle : 0);
-
-        if (sprite.subPass instanceof Array && sprite.active) {
-            for (let func of sprite.subPass) {
-                if (typeof func == "function") {
-                    func(sprite)
-                }
             }
         }
-        if (sprite.subSprites && !sprite.subSpritesDeactivated && depth < 100) {
-            if (typeof sprite.subSprites == "object")
-                this.render(sprite.subSprites,this.unscale(scaledX),this.unscale(scaledY),this.unscale(scaledWidth),{angle: referenceAngle.angle + (sprite.angle? sprite.angle : 0),px: sprite.absoluteCoordinates.x,py: sprite.absoluteCoordinates.y},depth);
-            else if (Array.isArray(sprite.subSprites))
-                this.renderArray(sprite.subSprites,this.unscale(scaledX),this.unscale(scaledY),this.unscale(scaledWidth),{angle: referenceAngle.angle + (sprite.angle? sprite.angle : 0),px: sprite.absoluteCoordinates.x,py: sprite.absoluteCoordinates.y},depth);
-        }
+
+        this.context.translate(sprite.drawOptions.centeredDrawLocation.x,sprite.drawOptions.centeredDrawLocation.y);
+        this.context.rotate(-sprite.absoluteAngle.z * Coordinate.angleFactor);
+        this.context.translate(-sprite.drawOptions.centeredDrawLocation.x,-sprite.drawOptions.centeredDrawLocation.y);
+
         this.context.restore();
-    },
-    scale: (coord) => coord * canvas.width,
-    localScale: (coord,reference) => coord * reference,
-    unscale: (coord) => coord / canvas.width,
-    localUnscale: (coord,reference) => coord / reference,
-    calcDistance: (x1,y1,x2,y2) => {
-        let deltaX = x1 - x2;
-        let deltaY = y1 - y2;
-        return Math.sqrt(deltaX * deltaX + deltaY * deltaY)
-    },
-    normalizeX: (x) => x - 0.5,
-    normalizeY: (y) => y - canvas.referenceHeight / 2,
-    /**
-     * 
-     * @param {*} sprites 
-     * @param {*} x 
-     * @param {*} y 
-     * @param {*} reference
-     * @param {Number} depth recursion depth starting point for subSprites (max recursion depth = 100)
-     */
-    render (sprites,x = 0, y = 0, reference = 1.0, referenceAngle = {angle: 0, px: 0.5, py: canvas.referenceHeight / 2}, depth = 0) {
-
-        for (const spriteKey of Object.keys(sprites)) {
-            let sprite = sprites[spriteKey];
-            this.draw(sprite,x,y,reference,referenceAngle, depth + 1);
-        }
-    },
-    renderArray (sprites,x = 0, y = 0, reference = 1.0,  referenceAngle = {angle: 0, px: 0, py: 0}, depth = 0) {
-        
-        sprites.forEach(sprite => {
-            this.draw(sprite,x,y,reference,referenceAngle,depth+1);
-        })
-    },
-    reverseRenderArray (sprites,x = 0, y = 0, reference = 1.0,  referenceAngle = {angle: 0, px: 0, py: 0},depth =0) {
-        
-        for (let i = sprites.length - 1; i >= 0; i--) {
-            this.draw(sprites[i],x,y,reference,referenceAngle,depth+ 1);        
-        }
-    },
-    clear () {
-        mouse.unstaggerAll();
-        canvas.context.canvas.height = this.height;
-        canvas.context.canvas.width = this.width;
-        this.referenceHeight = this.unscale(this.height);
-        this.context.clearRect(0, 0, this.context.canvas.width, this.context.canvas.height);
-    },
-    mouseOn (sprite) {
-        this.mouseOnRel(sprite,0,0,1);
-    },
-    mouseOnRel (sprite,x = 0,y = 0,reference = 1) {
-        let scaledX = this.localScale(sprite.x,reference) + x;
-        let scaledY = this.localScale(sprite.y,reference) + y;
-        let scaledWidth = this.localScale(sprite.width,reference);
-        let scaledHeight = this.localScale(sprite.height,reference);
-        if (sprite.subSprites)
-            for (const spriteKey of Object.keys(sprite.subSprites)) {
-                let subSprite = sprite.subSprites[spriteKey];
-                if(this.mouseOnRel(subSprite,scaledX,scaledY,scaledWidth))
-                    return true;
-            }
-        if (scaledX - scaledWidth / 2 > mouse.mouseX || scaledY - scaledHeight / 2 > mouse.mouseY)
-            return false;
-        if (scaledX + scaledWidth / 2 < mouse.mouseX || scaledY + scaledHeight / 2 < mouse.mouseY)
-            return false;
-        return true;
-    },
-    /**
-     * @deprecated
-     * sets width and height of sprite to image * factor
-     * @param {Sprite} sprite sprite to be scaled by factor from image
-     * @param {Number} factor factor to scale img by and apply sprite
-     */
-    scaleFromImage (sprite,factor) {
-        sprite.height = sprite.img.height * factor;
-        sprite.width = sprite.img.width * factor;
-    },
-    getTextHeight: (sprite,fontSize) => sprite.text.split("\n").length * fontSize * sprite.textBoxHeightScale,
-}
-
-class ActivatedFunction {
-    /**
-     * 
-     * @param {{(sprite: Sprite, animationProperties: ActivatedFunction) : void}} init 
-     * @param {{(sprite: Sprite, animationProperties: ActivatedFunction) : void}} func 
-     * @returns 
-     */
-    constructor (init = () => {}, func = () => {}) {
-        if (typeof init != "function" ||
-            typeof func != "function")
-            return;
-        this.init = init;
-        this.func = func;
-    }
-    active = false;
-    stateSwitch = false;
-    paused = false;
-    frame = 0;
-    activate () {
-        this.stateSwitch = !this.active;
-        this.active = true;
-    }
-    deactivate () {
-        this.stateSwitch = this.active;
-        this.active = false;
-    }
-    wasActivated () {
-        let ret = this.stateSwitch;
-        this.stateSwitch = false;
-        return ret;
-    }
-    setFrameInterval (interval) {
-        this.interval = interval;
-    }
-    pause () {
-        this.paused = true;
-    }
-    setTimeout (time) {
-        this.timeout = time;
-    }
-    unpause () {
-        this.paused = false;
     }
 }
 
-class SpriteOld {
-    x = 0;
-    y = 0;
-    width = 0;
-    height = 0;
-    /** @description deactivated deactivates all rendering excluding threads and activation */
-    deactivated = true;
-    /** @description active can be used as a cue to other parts of the program if said sprite has been activated or deactivated */
-    active = false;
-    stateSwitch = false;
-    constructor (x = 0.5,y = 0.3,width = 0.5,height = 0.3,subSprites = null) {
-        this.x = x;
-        this.y = y;
-        this.width = width;
-        this.height = height;
-        if(subSprites)
-            this.addSubsprites(subSprites)
-        this.addActivation();
+/**
+ * Draweable object with different draw options to customize rendering.
+ */
+class Sprite {
+    position;
+    angle;
+    dimensions;
+
+    absolutePosition = new Coordinate ();
+    absoluteAngle = new Coordinate ();
+    absoluteDimensions = new Coordinate (2,2,2);
+
+    drawOptions = {
+        position: new Coordinate (),
+        dimensions: new Coordinate (),
+        angle: new Coordinate (),
+
+        deltaPosition: new Coordinate (),
+        deltaAngle: new Coordinate (),
+        deltaDimensions: new Coordinate (),
+
+        projectedPosition: new Coordinate (),
+        centeredDrawLocation: new Coordinate (),
+        projectedDimension: new Coordinate (),
+        alignedDrawLocation: new Coordinate (),
+        drawSize: new Coordinate (),
+
+        deltaAbsoluteCoordinate: new Coordinate (),
+        deltaAbsoluteAngle: new Coordinate (),
+        deltaAbsoluteDimensions: new Coordinate ()
     }
-    addText (text,textBoxHeightScale = 1.0,align = "center") {
-        this.text = text
-        this.textBoxHeightScale = textBoxHeightScale;
-        this.align = align;
-    }
-    addImage (image) {
-        this.img = image;
-    }
-    rotate (angle) {
+
+    /**
+     * Creates an empty sprite.
+     * @param {Coordinate} position relative position of the sprite
+     * @param {Coordinate} angle relative angle of the sprite
+     * @param {Coordinate} dimensions relative size of the sprite
+     * @param {Boolean} show toggle rendering
+     */
+    constructor (position = new Coordinate (),
+                 angle = new Coordinate (),
+                 dimensions = new Coordinate (),
+                 show = true) {
+        this.position = position;
         this.angle = angle;
+        this.dimensions = dimensions;
+        this.options.show = show;
     }
-    addParticleEmitter (particleEmitter,particleIterator) {
-        if (typeof particleEmitter == "function" &&
-            typeof particleIterator == "function"
-        ) {
-            this.particleEmitter = particleEmitter;
-            this.particleIterator = particleIterator;
-            this.particles = [];
-        }
+
+    options = {
+        show: false,
+        text: false,
+        image: false,
+        sample: false,
+        particleEmitter: false,
+        subSprites: false,
+        transparency: false,
+        preProcessor: false,
+        postProcessor: false,
+        thread: false
     }
-    addSubsprites (subSprites = {}) {
-        this.subSprites = subSprites;
-    }
-    addTransparency (transparency) {
-        this.transparency = transparency;
-    }
-    appendAsSubSpriteTo (parentObject,key) {
-        if (!parentObject.subSprites)
-            parentObject.subSprites = {};
-        parentObject.subSprites[key] = this;
-    }
-    fuseSprite (parentObject) {
-        let temp = parentObject;
-        for (const key of Object.keys(temp)) {
-            if (!this[key])
-                this[key] = temp[key];
-        }
-        Object.setPrototypeOf(parentObject,Sprite.prototype);
-        return this;
-    }
+
     /**
-     * 
-     * @param {ActivatedFunction} animation 
+     * Toggles selected option.
+     * @param {("show" |
+     *          "text" |
+     *          "image" |
+     *          "sample" |
+     *          "particleEmitter" |
+     *          "subSprites" |
+     *          "transparency" |
+     *          "preProcessor" |
+     *          "postProcessor" |
+     *          "thread")} option 
+     * @param {Boolean | ("toggle" |
+     *                    "active" |
+     *                    "inactive")} val toggle value
      */
-    addAnimation(animation) {
-        if (animation instanceof ActivatedFunction)
-            this.animation = animation;
-    }
-    /**
-     * 
-     * @param {Sample} sample 
-     */
-    addImageSample (sample) {
-        this.sample = sample;
-    }
-    deactivate () {
-        this.stateSwitch = this.active;
-        this.active = false;
-        this.deactivated = true;
-    }
-    activate () {
-        this.stateSwitch = !this.active;
-        this.active = true;
-        this.deactivated = false;
-    }
-    wasActivated () {
-        let ret = this.stateSwitch && this.active;
-        this.stateSwitch = false;
-        return ret;
-    }
-    stateSwitched () {
-        let ret = this.stateSwitch;
-        this.stateSwitch = false;
-        return ret;
-    }
-    /**
-     * 
-     * @param {{(sprite: Sprite) : void}} subPass 
-     */
-    addSubPass (subPass) {
-        if (typeof subPass != "function")
+    toggleOption (option,val = "toggle") {
+        if (typeof val == "boolean") {
+            this.options[option] = val;
             return;
-        if (!this.subPass)
-            this.subPass = [];
-        this.subPass.push(subPass);
-    }
-    addAnimationChain (animations = {}) {
-        if (!this.animation)
-            this.addAnimation(new ActivatedFunction());
-        this.animationChain = animations;
-    }
-    /**
-     * 
-     * @param {ActivatedFunction} animation 
-     * @param {String} key 
-     */
-    addAnimationToChain (animation, key) {
-        if (!this.animation)
-            this.addAnimation(animation);
-        if (!this.animationChain)
-            this.addAnimationChain();
-        this.animationChain[key] = animation;
-    }
-    swapAnimation (key) {
-        this.animation.deactivate();
-        let newAnimation = this.animationChain[key];
-        if (newAnimation instanceof ActivatedFunction) {
-            this.animation = this.animationChain[key];
-            this.animation.activate();
+        }
+        switch (val) {
+            case "toggle":
+                this.options[option] = !this.options[option];
+                break;
+            case "active":
+                this.options[option] = true;
+                break;
+            case "inactive":
+                this.options[option] = false;
+                break;
         }
     }
+
     /**
-     * @deprecated
-     * @param {ActivatedFunction} mainFunction
+     * Adds and enables text on this sprite.
+     * @param {FormattedText} text text added
      */
-    addMainFunction (mainFunction) {
-        /**
-         * @deprecated
-         */
-        this.main = mainFunction;
+    addText (text) {
+        this.text = text;
+        this.toggleOption("text","active");
     }
+
     /**
-     * Only use for post-processing
-     * @param {{(sprite: Sprite): void}} activation 
-     * @param {{(sprite: Sprite): void}} deactivation
+     * Adds and enables image on this sprite.
+     * @param {HTMLImageElement} image image added
      */
-    addActivation (activation = (sprite) => {sprite.deactivated = false}, deactivation = (sprite) => {sprite.deactivated = true}) {
-        if (typeof activation == "function" &&
-            typeof deactivation == "function") {
-                this.activation = activation;
-                this.deactivation = deactivation;
-            }
+    addImage (image) {
+        this.image = image;
+        this.toggleOption("image","active");
+    }
+
+    /**
+     * Adds and enables sample on this sprite.
+     * @param {Sample} sample sample added
+     */
+    addSample (sample) {
+        this.sample = sample;
+        this.toggleOption("sample","active");
+    }
+
+    /**
+     * Adds and enables particleEmitter on this sprite.
+     * @param {ParticleEmitter} particleEmitter particleEmitter to be added
+     */
+    addParticleEmitter (particleEmitter) {
+        this.particleEmitter = particleEmitter;
+        this.toggleOption("particleEmitter","active");
+    }
+
+    /**
+     * Adds and enables subSprites on this sprite.
+     * @param {SubSprites | Array<Sprite>} subSprites subSprites object or array of sprites
+     */
+    addSubSprites (subSprites) {
+        this.subSprites = subSprites;
+        this.toggleOption("subSprites","active");
+    }
+
+    /**
+     * Adds and enables transparency on this sprite.
+     * @param {Number} alpha value between 0 (fully transparent) and 1
+     */
+    addTransparency (alpha) {
+        this.transparency = alpha;
+        this.toggleOption("transparency","active");
+    }
+
+    /**
+     * Adds and enables preProcessor on this sprite.
+     * @param {ChainedFunctions} preProcessor preProcessor functions executed before during the draw call before showing the sprite
+     */
+    addPreProcessor (preProcessor) {
+        this.preProcessor = preProcessor;
+        this.toggleOption("preProcessor","active");
     }
     
     /**
-     * 
-     * @param {Thread} thread 
+     * Adds and enables postProcessor on this sprite.
+     * @param {ChainedFunctions} postProcessor postProcessor functions executed after during the draw call after rendering before particles
+     */
+    addPostProcessor (postProcessor) {
+        this.postProcessor = postProcessor;
+        this.toggleOption("postProcessor","active");
+    }
+
+    /**
+     * @todo not ready for use
+     * @param {Thread} thread thread that can be run if the parent object has subSprites enabled or the sprite is directly inputted into the runThread function
      */
     addThread (thread) {
         this.thread = thread;
-        this.thread.parentSprite = this;
-    }
-
-    subSpritesDeactivated = false;
-
-    /**
-     * Only activates subSprites on this sprite
-     * @returns {void}
-     */
-    activateSubSprites () {
-        if (!this.subSprites)
-            return;
-        this.forEach(sprite => {
-            sprite.activate();
-        })
-        this.subSpritesDeactivated = false;
+        this.toggleOption("thread","active");
     }
 
     /**
-     * Only deactivates subSprites on this sprite
-     * @returns {void}
+     * Checks if two sprites are overlapping globally.
+     * @param {Sprite} sprite compared sprite
+     * @returns {Boolean} if the sprites are overlapping
      */
-    deactivateSubSprites () {
-        if (!this.subSprites)
-            return;
-        this.forEach(sprite => {
-            sprite.deactivate();
-        })
-        this.subSpritesDeactivated = true;
-    }
-
-    /**
-     * 
-     * @param {{(val: Sprite, key: String)}} callback 
-     */
-    forEach(callback) {
-        if (typeof callback != "function")
-            return;
-        for (const key in this.subSprites) {
-            if(this.subSprites[key] instanceof Sprite)
-                callback(this.subSprites[key],key);
-        }
-    }
-
-
-    initializeAbsoluteCoordinates () {
-        this.absoluteCoordinates = {
-            x: 0,
-            y: 0,
-            width: 0,
-            height: 0,
-            angle: 0
-        }
-    }
-
-    /**
-     * 
-     * @param {Sprite} sprite 
-     */
-    overlaps (sprite) {
-        if (!sprite.absoluteCoordinates ||
-            !this.absoluteCoordinates)
-            return false;
-        if (sprite.absoluteCoordinates.x - sprite.absoluteCoordinates.width/2 < this.absoluteCoordinates.x + this.absoluteCoordinates.width/2 &&
-            sprite.absoluteCoordinates.x + sprite.absoluteCoordinates.width/2 > this.absoluteCoordinates.x - this.absoluteCoordinates.width/2 &&
-            sprite.absoluteCoordinates.y - sprite.absoluteCoordinates.height/2 < this.absoluteCoordinates.y + this.absoluteCoordinates.height/2 &&
-            sprite.absoluteCoordinates.y + sprite.absoluteCoordinates.height/2 > this.absoluteCoordinates.y - this.absoluteCoordinates.height/2)
+    overlapping (sprite) {
+        let negativeBorderA = this.absolutePosition.difference(this.absoluteDimensions.unscale(2));
+        let positiveBorderA = this.absolutePosition.add(this.absoluteDimensions.unscale(2));
+        let negativeBorderB = sprite.absolutePosition.difference(sprite.absoluteDimensions.unscale(2));
+        let positiveBorderB = sprite.absolutePosition.add(sprite.absoluteDimensions.unscale(2));
+        let negativeOverlap = positiveBorderB.compare(negativeBorderA);
+        let positiveOverlap = positiveBorderA.compare(negativeBorderB);
+        if (negativeOverlap.allEqual(1) &&
+            positiveOverlap.allEqual(1)) {
             return true;
+        }
+        return false;
+    }
+    
+    /**
+     * Checks if two sprites are overlapping assuming they both inhabit the same reference sphere.
+     * @param {Sprite} sprite compared sprite
+     * @returns if the sprites are overlapping
+     */
+    localOverlapping (sprite) {
+        let negativeBorderA = this.position.difference(this.dimensions.unscale(2));
+        let positiveBorderA = this.position.add(this.dimensions.unscale(2));
+        let negativeBorderB = sprite.position.difference(sprite.dimensions.unscale(2));
+        let positiveBorderB = sprite.position.add(sprite.dimensions.unscale(2));
+        let negativeOverlap = positiveBorderB.compare(negativeBorderA);
+        let positiveOverlap = positiveBorderA.compare(negativeBorderB);
+        if (negativeOverlap.allEqual(1) &&
+            positiveOverlap.allEqual(1)) {
+            return true;
+        }
         return false;
     }
 
     /**
-     * 
-     * @param {Sprite} sprite 
+     * Checks if two sprites overlap.
+     * @param {Sprite} spriteA compared sprite
+     * @param {Sprite} spriteB compared sprite
+     * @returns {Boolean} if the sprites are overlapping
      */
-    switch (sprite) {
-        this.deactivateSubSprites();
-        this.subSpritesDeactivated = false;
-        sprite.activate();
+    static overlapping (spriteA,spriteB) {
+        return spriteA.overlapping(spriteB);
     }
-} 
-
-class ThreadOld {
 
     /**
-     * 
-     * @param {Array<{(thread: Thread): void}>} functions 
+     * Checks if two sprites are overlapping assuming they both inhabit the same reference sphere.
+     * @param {Sprite} spriteA compared sprite
+     * @param {Sprite} spriteB compared sprite
+     * @returns if the sprites are overlapping
      */
-    constructor (functions) {
+    static localOverlapping (spriteA,spriteB) {
+        return spriteA.localOverlapping(spriteB)
+    }
+}
+
+/**
+ * Collection of functions called in order.
+ */
+class ChainedFunctions {
+    functions = []
+    pointer = 0;
+    finished = false;
+    returnVal;
+
+    /**
+     * Constructs an chained functions object.
+     * @param {Array<{(*): *}>} functions array of chained functions
+     */
+    constructor (functions = []) {
         this.functions = functions;
     }
 
-    origin = false
-    on = false
-    paused = false
-    next = 0
-    functions = []
-    lentTo = null
-    returnVal = {}
-    /** @type {Thread} */
-    lender = null
-    returnThisThread = false
-    nextFrame = false
-    autoResetNext = true;
-    args = {}
-    variables = {}
-    getNext(nextFrame) {
-        if (this.on) { // if this thread should be executed
-            if (this.next < this.functions.length) {    // if any functions on this thread are left to execute
-                this.functions[this.next](this);
-                nextFrame.next = this.nextFrame;
-                this.nextFrame = false;
-                this.next++;
-            }
-        } else if (this.lentTo) {
-            this.on = this.lentTo.getNext(nextFrame);
-            this.returnThisThread = false;
-        } else {
-            this.on = true;
-            this.returnThisThread = false;
+    /**
+     * Calls next chained function.
+     * @param {*} args arguments to pass into the chained function
+     * @returns {Boolean} returns true if the chain has completed execution
+     */
+    callNext (args) {
+        this.finished = false;
+        this.increment();
+        let func = this.get();
+        if (!func) {
+            this.finished = true;
+            return true;
         }
-        this.returnThisThread = this.next >= this.functions.length || this.returnThisThread;    // return if no thread functions left to execute or the thread is telling to return
-        if (this.returnThisThread && this.on) { // returning a thread is only permitted to the thread that is on.
-            if (this.autoResetNext)
-                this.resetNext();
-            this.returnThisThread = false;
-            this.nextFrame = false;
-            this.on = false;
+        this.returnVal = func(args);
+        if (this.finished) {
             return true;
         }
         return false;
     }
-    resetNext (next = 0) {
-        this.next = next;
-    }
-    lendThread (thread,args) {
-        this.lentTo = thread;
-        thread.on = true;
-        thread.args = args;
-        thread.lender = this;
-        this.on = false;
-    }
-    returnThread (returnVal) {
-        this.lender.returnVal = returnVal;
-        this.returnThisThread = true;
-    }
+
     /**
-     * 
-     * @param {Thread} thread 
-     * @param {*} args 
+     * Switches finished to true.
      */
-    cloneThread (thread,args) {
-        thread.makeThreadOrigin();
-        thread.args = args;
+    return () {
+        this.finished = true;
     }
-    requestNextFrame () {
-        this.nextFrame = true;
+
+    /**
+     * Get the current function.
+     * @returns {{(*): *} | false} returns the current function
+     */
+    get () {
+        if (this.pointer < 0) {
+            return false;
+        }
+        if (this.end()) {
+            return false;
+        }
+        return functions[pointer];
     }
-    requestNextFrameAndLoop (steps = 0) {
-        if (this.next - steps < 0 || this.functions.length - 1 < this.next - steps)
-            return;
-        this.next += steps - 1;
-        this.requestNextFrame();
+
+    /**
+     * Checks if the pointer has reached the end.
+     * @returns {Boolean} returns if the pointer has reached the end
+     */
+    end () {
+        return this.pointer >= this.functions.length;
     }
-    move (steps = 0) {
-        if (this.next - steps < 0 || this.functions.length - 1 < this.next - steps)
-            return;
-        this.next += steps - 1;
+
+    /**
+     * Increments the pointer by 1.
+     */
+    increment () {
+        this.pointer++;
     }
-    makeThreadOrigin () {
-        this.origin = true;
-        this.on = true;
+
+    /**
+     * Goes to specified location.
+     * @param {Number | ("start" |
+     *                   "end" |
+     *                   "last" |
+     *                   "previous" |
+     *                   "loop" |
+     *                   "next")} loopTo position the pointer should jump to
+     */
+    goto (loopTo = 0) {
+        switch (loopTo) {
+            case "start":
+                this.pointer = -1;
+                break;
+            case "end":
+                this.pointer = this.functions.length;
+                break;
+            case "last":
+                this.pointer = this.functions.length - 1;
+                break;
+            case "previous":
+                this.pointer-= 2;
+                break;
+            case "loop":
+                this.pointer--;
+                break;
+            case "next":
+                this.pointer = this.pointer;
+                break;
+            default:
+                if (typeof loopTo == "number") {
+                    this.pointer = loopTo;
+                }
+                break;
+        }
     }
-    pause () {
-        if (!this.lender) {
-            this.paused = true;
-            this.requestNextFrame()
+
+    /**
+     * Adds function to the chain.
+     * @param {{(*): *}} func function to be added
+     */
+    add (func) {
+        this.functions.push(func);
+    }
+
+    /**
+     * Moves pointer back to the start.
+     */
+    restart () {
+        this.pointer = -1;
+    }
+}
+
+class Particle {
+    behaviour;
+    position;
+
+    destroyed = false;
+
+    drawOptions = {
+        absoluteCoordinate: new Coordinate (),
+        deltaAbsoluteCoordinate: new Coordinate (),
+        projectedPosition: new Coordinate (),
+        particleDrawPosition: new Coordinate ()
+    }
+
+    /**
+     * Creates a particle object.
+     * @param {ChainedFunctions} behaviour iterates every frame
+     * @param {Coordinate} position position of particle
+     */
+    constructor (behaviour,position = new Coordinate ()) {
+        this.behaviour = behaviour;
+        this.position = position;
+    }
+
+    /**
+     * Gets rid of particle object after this frame iteration.
+     */
+    destroy () {
+        this.destroyed = true;
+    }
+
+    /**
+     * Clones the particle.
+     * @param {Coordinate} position position of particle
+     * @returns {Particle} cloned particle
+     */
+    clone (position = this.position) {
+        let clone = new Particle (this.behaviour);
+        clone.position.assign(position);
+        return clone;
+    }
+}
+
+class ParticleEmitter {
+    emitter;
+    particles;
+
+    /**
+     * Creates a particle emitter object.
+     * @param {ChainedFunctions} emitter iterates every frame
+     * @param {Array<Particle>} particles initialize particles
+     */
+    constructor (emitter = new ChainedFunctions (),particles = []) {
+        this.emitter = emitter;
+        this.particles = particles;
+    }
+
+    /**
+     * Creates a particle.
+     * @param {Array<Particle> | Particle} particle particle created
+     */
+    create (particle) {
+        this.particles.push(...particle);
+    }
+
+    /**
+     * Clears all particles.
+     */
+    clear () {
+        this.particles = [];
+    }
+}
+
+/**
+ * An object to manage multiple chainedFunctions objects.
+ */
+class Thread {
+    tree = [];
+    timeout = 0;
+    args;
+
+    /**
+     * Creates a thread object.
+     * @param {Array<ChainedFunctions>} tree chainedFunctions to be added
+     */
+    constructor (tree = []) {
+        this.tree = tree;
+    }
+
+    /**
+     * Calls next chained function from the tree.
+     * @returns {Boolean} wether the chained function could be called
+     */
+    callNext () {
+        if (timeout > 0) {
+            this.timeout--;
+            return true;
+        }
+        let chain = this.get();
+        if (!chain) {
+            return true;
+        }
+        chain.callNext(this.args);
+        this.args = chain.returnVal;
+        if (chain.finished) {
+            this.tree.pop();
+        }
+        return false;
+    }
+
+    /**
+     * Checks if the tree is empty.
+     * @returns {Boolean} wether the tree is empty or not
+     */
+    empty () {
+        return this.tree.length <= 0;
+    }
+
+    /**
+     * Fetches the current chained function.
+     * @returns {ChainedFunctions | false} returns the fetched chained function
+     */
+    get () {
+        if (this.empty()) {
+            return false;
+        }
+        return this.tree[this.tree.length - 1];
+    }
+
+    /**
+     * Pushes chained functions onto the thread tree
+     * @param {ChainedFunctions} chain chain functions to be pushed
+     */
+    push (chain) {
+        this.tree.push (chain);
+    }
+
+    /**
+     * Postpones the execution of the callNext function.
+     * @param {Number} calls number of callNext function call the execution should be postponed by
+     */
+    postpone (calls = 1) {
+        this.timeout = calls;
+    }
+}
+
+/**
+ * Iterable collection of sprites.
+ */
+class SubSprites {
+    /**
+     * Creates a subSprites object.
+     * @param {Object} subSprites object containing Sprites
+     */
+    constructor (subSprites = {}) {
+        SubSprites.forEach(subSprites,(sprite,key) => {
+            this[key] = sprite;
+        })
+    }
+
+    /**
+     * Calls the callback for each subSprite.
+     * @param {{(sprite: Sprite, key: String | Number) : void}} callback Called for each subSprite once.
+     */
+    forEach (callback) {
+        SubSprites.forEach(this,callback);
+    }
+
+    /**
+     * Calls the callback for each sprite in the Array or subSprites object.
+     * @param {Array<Sprite>|SubSprites} sprites Array or subSprites object to iterate over.
+     * @param {{(sprite: Sprite, key: String | Number) : void}} callback Called for each sprite once.
+     */
+    static forEach (sprites,callback) {
+        if (typeof callback != "function") {
             return;
         }
-        if (this.origin)
-            this.paused = true;
-        else
-            this.lender.pause();
-        this.requestNextFrame()
-    }
-    resume () {
-        if (!this.lender) {
-            this.paused = false;
-            this.requestNextFrame()
+        if (Array.isArray(sprites)) {
+            sprites.forEach((sprite,key) => {
+                if (sprite instanceof Sprite) {
+                    callback(sprite,key);
+                }
+            })
             return;
         }
-        if (this.origin)
-            this.paused = false;
-        else
-            this.lender.resume();
-        this.requestNextFrame()
+        if (typeof sprites == "object") {
+            for (const key in sprites) {
+                if (sprites[key] instanceof Sprite) {
+                    callback(sprites[key],key);
+                }
+            }
+            return;
+        }
+    }
+}
+
+/**
+ * String with draw information.
+ */
+class FormattedString {
+    color;
+    fontSize;
+    fontFamily;
+    align;
+    lineSpacing;
+    text;
+
+    /**
+     * Creates a formatted string object.
+     * @param {String} color text color
+     * @param {Number} fontSize font size
+     * @param {String} fontFamily font family
+     * @param {String} align text alignment
+     * @param {Number} lineSpacing spacing between this line and the next
+     * @param {String} text contents
+     */
+    constructor (color = "#000000",
+        fontSize = 0.1,
+        fontFamily = "'serif'",
+        align = "left",
+        lineSpacing = 0.1,
+        text = "") {
+        this.color = color;
+        this.fontSize = fontSize;
+        this.fontFamily = fontFamily;
+        this.align = align;
+        this.lineSpacing = lineSpacing;
+        this.text = text;
+    }
+
+    /**
+     * Copies FormattedString data to self.
+     * @param {FormattedString} formattedString FormattedString copied from
+     */
+    assign (formattedString) {
+        this.color = formattedString.color;
+        this.fontSize = formattedString.fontSize;
+        this.fontFamily = formattedString.fontFamily;
+        this.align = formattedString.align;
+        this.lineSpacing = formattedString.lineSpacing;
+        this.text = formattedString.text;
+    }
+
+    /**
+     * Parses string into formatted string.
+     * @param {String} data string to parse
+     */
+    parse (data) {
+        this.assign(FormattedString.parse(data,this));
+    }
+
+    /**
+     * Parses string into formatted string.
+     * @param {String} data string to parse
+     * @param {FormattedString} styleTemplate formatted string template in default cases
+     * @returns {FormattedString} parsed string
+     */
+    static parse (data,styleTemplate = new FormattedString ()) {
+        let parsedString = new FormattedString ();
+        parsedString.assign(styleTemplate);
+        let paddedData = " " + data + " ";
+        let splitData = paddedData.split('"');
+        let style = splitData[0];
+        style.split(" ").forEach(styleProperty => {
+            const typeDenominator = styleProperty.charAt(0);
+            switch (typeDenominator) {
+                case "#":
+                    parsedString.color = styleProperty;
+                    break;
+                case "'":
+                    if (document.fonts.check("10px " + styleProperty)) {
+                        parsedString.fontFamily = styleProperty;
+                    }
+                    break;
+                default:
+                    let wordArgument = styleProperty.split(':');
+                    if (wordArgument.length < 2) {
+                        if (parseFloat(styleProperty) > 0) {
+                            parsedString.fontSize = parseFloat(styleProperty);
+                        }
+                        break;
+                    }
+                    switch (wordArgument[0]) {
+                        case "align":
+                            parsedString.align = wordArgument[1];
+                            break;
+                        case "lineSpacing":
+                            parsedString.lineSpacing = parseFloat(wordArgument[1]);
+                            break;
+                    }
+                    break;
+            }
+        })
+        splitData.shift();
+        splitData.pop();
+        parsedString.text = splitData.join('"');
+
+        return parsedString;
+    }
+}
+
+/**
+ * Collection of formattedStrings.
+ */
+class FormattedText {
+    align;
+    text;
+
+    /**
+     * Creates a formattedText object.
+     * @param {Array<FormattedString>} formattedStrings formatted strings to add
+     */
+    constructor (formattedStrings = []) {
+        this.text = formattedStrings;
+    }
+
+    /**
+     * Parses string to formattedText.
+     * @param {String} data string to parse
+     */
+    parse (data) {
+        this.text.push(...FormattedText.parse(data));
+    }
+
+    /**
+     * Parses string into formatted text.
+     * @param {String} data string to parse
+     * @returns {FormattedString} parsed string
+     */
+    static parse (data) {
+        let parsedText = new FormattedText ();
+        data.split("\n").forEach((str,index) => {
+            let regionStyle = new FormattedString ();
+            if (index > 0) {
+                regionStyle = parsedText.text[index - 1];
+            }
+            parsedText.text.push(FormattedString.parse(str,regionStyle));
+        })
+        return parsedText;
+    }
+}
+
+/**
+ * Partial sample of a source image.
+ */
+class Sample {
+    sampleLocation;
+    sampleSize;
+    image;
+
+    /**
+     * Creates a sample object.
+     * @param {Coordinate} sampleLocation location of the sample relative to image width
+     * @param {Coordinate} sampleSize size of the sample relative to image width
+     * @param {HTMLImageElement} image image data
+     */
+    constructor (sampleLocation = new Coordinate (),
+                 sampleSize = new Coordinate (),
+                 image = new Image ()) {
+        this.sampleLocation = sampleLocation;
+        this.sampleSize = sampleSize;
+        this.image = image;
+    }
+
+    /**
+     * Calculates the real location of the sample within its source image.
+     * @returns real location of the sample
+     */
+    getAbsoluteLocation () {
+        return this.sampleLocation.scale(this.image.width);
+    }
+
+    /**
+     * Calculates the real size of the sample in its source image.
+     * @returns real size of the sample
+     */
+    getAbsoluteSize () {
+        return this.sampleSize.scale(this.image.width);
+    }
+}
+
+/**
+ * An event that is a completeable task.
+ */
+class EventTask {
+    completed = false;
+    val;
+
+    /**
+     * Creates an event task object.
+     * @param {*} val event value
+     */
+    constructor (val = true) {
+        this.val = val;
+    }
+}
+
+/**
+ * A collection of event tasks.
+ */
+class EventStream {
+    /** @type {Array<EventTask>} */
+    stream = [];
+
+    /**
+     * Creates an event stream object.
+     */
+    constructor () {}
+
+    /**
+     * Checks if the stream is empty or not.
+     * @returns {Boolean} wether the stream is empty
+     */
+    empty () {
+        return this.stream.length < 1;
+    }
+
+    /**
+     * Gets the oldest event task and returns it.
+     * @param {boolean} completed wether the task should be marked as completed
+     * @returns {*} oldest event task
+     */
+    first (completed) {
+        if (this.empty()) {
+            return false;
+        }
+        this.stream[0].completed = completed;
+        return this.stream[0].val;
+    }
+
+    /**
+     * Gets the most recent event task and returns it.
+     * @param {boolean} completed wether the task should be marked as completed
+     * @returns {*} most recent event task
+     */
+    recent (completed = true) {
+        if (this.empty()) {
+            return false;
+        }
+        this.stream[this.stream.length - 1].completed = completed;
+        return this.stream[this.stream.length - 1].val;
+    }
+
+    /**
+     * Adds a single event task to the stream.
+     * @param {*} val event added
+     */
+    pushEvent (val) {
+        this.stream.push(new EventTask(val));
+    }
+
+    /**
+     * Iterates over each event task and call the handler with them in order of insertion.
+     * @param {{(eventVal: *, completed: boolean): boolean}} handler called on each event task and completes event task unless handler returns true
+     */
+    handleEvents (handler) {
+        for (let index = 0; index < this.stream.length; index++) {
+            const element = this.stream[index];
+            element.completed = !handler(element.val,element.completed);
+        }
     }
     
-}
-class SampleOld {
-    constructor (sampleX,sampleY,sampleWidth,sampleHeight,image = new Image()) {
-        this.img = image;
-        this.sampleX = sampleX;
-        this.sampleY = sampleY;
-        this.sampleWidth = sampleWidth;
-        this.sampleHeight = sampleHeight;
-    }
-    setImage (image) {
-        this.img = image;
-    }
-}
-
-class ImageSprite extends Sprite {
-    constructor (x,y,width,height,image,subSprites = null) {
-        super(x,y,width,height,subSprites);
-        this.img = image;
-    }   
-}
-
-class TextSprite extends Sprite {
-    constructor (x,y,width,height,text,textBoxHeightScale,align,subSprites = null) {
-        super(x,y,width,height,subSprites);
-        this.text = text
-        this.textBoxHeightScale = textBoxHeightScale;
-        this.align = align;
-    }
-}
-class TextImageSprite extends TextSprite {
-    constructor (x,y,width,height,image,text,textBoxHeightScale,align,subSprites = null) {
-        super(x,y,width,height,text,textBoxHeightScale,align,subSprites);
-        this.img = image;
-    }
-}
-
-class SampleSprite extends Sprite {
-    constructor (x,y,width,height,sample) {
-        super(x,y,width,height);
-        this.addImageSample(sample);
-    }
-}
-
-class ParticleEmitter extends Sprite {
-    constructor (x,y,width,height,particleEmitter,particleIterator,subSprites = null) {
-        super(x,y,width,height,subSprites);
-        this.addParticleEmitter(particleEmitter,particleIterator);
-    }
-}
-
-class AnimatedSprite extends Sprite {
     /**
-     * 
-     * @param {Number} x 
-     * @param {Number} y 
-     * @param {Number} width 
-     * @param {Number} height 
-     * @param {ActivatedFunction} animation 
-     * @param {Object} subSprites 
+     * Clears all event tasks.
      */
-    constructor (x,y,width,height,animation,subSprites = null) {
-        super(x,y,width,height,subSprites);
-        this.addAnimation(animation);
+    clear () {
+        this.stream = [];
+    }
+
+    /**
+     * Clears all completed event tasks.
+     */
+    clearCompleted () {
+        this.stream = this.stream.filter(eventTask => !eventTask.completed);
     }
 }

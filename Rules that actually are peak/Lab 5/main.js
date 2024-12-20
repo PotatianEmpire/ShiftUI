@@ -1,18 +1,31 @@
-function init () {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+let canvas = new Canvas("view");
+let lab5 = new Sprite ();
 
+function init () {
     constructLab5();
+    lab5 = lab5App;
 }
 
 
 function main () {
+
+    canvas.prepareRender(lab5);
+    console.log("----- rendering prepared -----");
+
+    canvas.runThreads(lab5);
+    console.log("----- threads completed running -----");
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
     canvas.clear();
-    console.log("----- new frame -----");
+    console.log("----- frame cleared and window size adjusted -----");
+
     canvas.render(lab5);
+    console.log("----- new frame -----");
+
 }
 
-let fps = 5;
+let fps = 60;
 
 init();
 setInterval(() => {
