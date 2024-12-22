@@ -15,7 +15,7 @@ let mediaInterface = {
             this.request(image,src);
             for (const key in samples) {
                 if(samples[key] instanceof Sample){
-                    samples[key].img = image;
+                    samples[key].image = image;
                 }
             }
         },

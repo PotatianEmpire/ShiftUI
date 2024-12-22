@@ -66,9 +66,9 @@ class Coordinate {
      */
     difference (coordinates) {
         let coordDiff = new Coordinate();
-        coordDiff.x = coordinates.x - this.x;
-        coordDiff.y = coordinates.y - this.y;
-        coordDiff.z = coordinates.z - this.z;
+        coordDiff.x = this.x - coordinates.x;
+        coordDiff.y = this.y - coordinates.y;
+        coordDiff.z = this.z - coordinates.z;
         return coordDiff;
     }
 
@@ -221,7 +221,7 @@ class Coordinate {
     rotate (angle,anchorpoint) {
         let rotatedCoordinate = new Coordinate ();
         let scaledAngle = angle.scale(Coordinate.angleFactor);
-        rotatedCoordinate.assign(Coordinate.difference(anchorpoint,this));
+        rotatedCoordinate.assign(Coordinate.difference(this,anchorpoint));
         rotatedCoordinate.assign(rotatedCoordinate.rotateX(scaledAngle.x));
         rotatedCoordinate.assign(rotatedCoordinate.rotateY(scaledAngle.y));
         rotatedCoordinate.assign(rotatedCoordinate.rotateZ(scaledAngle.z));
@@ -236,6 +236,30 @@ class Coordinate {
         this.x = coordinate.x;
         this.y = coordinate.y;
         this.z = coordinate.z;
+    }
+
+    /**
+     * Assigns x,y,z values to the coordinate
+     * @param {Number | true} x x value, true will copy the old value
+     * @param {Number | true} y y value, true will copy the old value
+     * @param {Number | true} z z value, true will copy the old value
+     */
+    assignVal (x,y,z) {
+        let ax = x;
+        let ay = y;
+        let az = z;
+        if (x === true) {
+            ax = this.x;
+        }
+        if (y === true) {
+            ay = this.y;
+        }
+        if (z === true) {
+            az = this.z;
+        }
+        this.x = ax;
+        this.y = ay;
+        this.z = az;
     }
 
     /**
@@ -260,6 +284,32 @@ class Coordinate {
         return this.x == reference &&
                this.y == reference &&
                this.z == reference;
+    }
+
+    /**
+     * Compares wether to coordinates are the same.
+     * @param {Coordinate} comparison coordinate this coordinate is compared to
+     * @returns {Boolean} wether all components of this coordinate equal the inputted coordinate
+     */
+    equals (comparison) {
+        return this.x == comparison.x &&
+               this.y == comparison.y &&
+               this.z == comparison.z;
+    }
+    
+    /**
+     * Checks wether the coordinate falls withing the given range.
+     * @param {Coordinate} min minimum value of the range
+     * @param {Coordinate} max maximum value of the range
+     * @returns {Boolean} wether the coordiante components fall within the range
+     */
+    inRange (min,max) {
+        return this.x >= min.x &&
+               this.x <= max.x &&
+               this.y >= min.y &&
+               this.y <= max.y &&
+               this.z >= min.z &&
+               this.z <= max.z;
     }
 
     /**
@@ -386,6 +436,7 @@ class Coordinate {
  */
 class Canvas {
     dimensions = new Coordinate ();
+    centerPoint = new Coordinate ();
     width = 0;
     height = 0;
     maxDepth = 100;
@@ -409,7 +460,10 @@ class Canvas {
     clear () {
         this.context.canvas.height = this.height;
         this.context.canvas.width = this.width;
-        this.dimensions.y = this.height / this.width;
+        this.dimensions.y = 2 * this.height / this.width;
+        this.dimensions.x = 2;
+        this.centerPoint.assign(this.dimensions.unscale(2));
+        
         this.context.clearRect(0,0,this.width,this.height);
     }
 
@@ -423,11 +477,9 @@ class Canvas {
             return;
         }
         if (sprites instanceof Sprite) {
-            if (!sprites.options.thread) {
-                return;
+            if (sprites.options.thread) {
+                while (!sprites.thread.callNext());
             }
-
-            while (!sprites.thread.callNext());
 
             if (sprites.options.subSprites) {
                 this.runThreads(sprites.subSprites,depth + 1);
@@ -436,11 +488,9 @@ class Canvas {
             return;
         }
         SubSprites.forEach(sprites,sprite => {
-            if (!sprite.options.thread) {
-                return;
+            if (sprite.options.thread) {
+                while (!sprite.thread.callNext());
             }
-
-            while (!sprite.thread.callNext());
 
             if (sprite.options.subSprites) {
                 this.runThreads(sprite.subSprites,depth + 1);
@@ -462,7 +512,7 @@ class Canvas {
             this.calcPos(sprites,reference);
 
             if (sprites.options.subSprites) {
-                this.prepareRender(sprites.subSprites,reference,depth + 1);
+                this.prepareRender(sprites.subSprites,sprites,depth + 1);
             }
 
             return;
@@ -471,7 +521,7 @@ class Canvas {
             this.calcPos(sprite,reference);
 
             if (sprite.options.subSprites) {
-                this.prepareRender(sprite.subSprites,reference,depth + 1);
+                this.prepareRender(sprite.subSprites,sprite,depth + 1);
             }
         })
     }
@@ -575,7 +625,7 @@ class Canvas {
         let drawSize = Coordinate.scale(projectedDimension,screenCenter.x);
         let spriteCenter = Coordinate.unscale(drawSize,2);
         let centeredDrawLocation = Coordinate.add(Coordinate.scale(projectedPosition,screenCenter.x),screenCenter);
-        let alignedDrawLocation = Coordinate.difference(spriteCenter,centeredDrawLocation);
+        let alignedDrawLocation = Coordinate.difference(centeredDrawLocation,spriteCenter);
         
 
         sprite.drawOptions.projectedPosition.assign(projectedPosition);
@@ -607,7 +657,7 @@ class Canvas {
                     ),
                     screenCenter
                 );
-                particle.drawOptions.deltaAbsoluteCoordinate.assign(Coordinate.difference(particle.drawOptions.absoluteCoordinate,absoluteParticlePosition));
+                particle.drawOptions.deltaAbsoluteCoordinate.assign(Coordinate.difference(absoluteParticlePosition,particle.drawOptions.absoluteCoordinate));
                 particle.drawOptions.absoluteCoordinate.assign(absoluteParticlePosition);
                 particle.drawOptions.projectedPosition.assign(projectedParticlePosition);
                 particle.drawOptions.particleDrawPosition.assign(particleDrawPosition);
@@ -753,7 +803,7 @@ class Sprite {
      */
     constructor (position = new Coordinate (),
                  angle = new Coordinate (),
-                 dimensions = new Coordinate (),
+                 dimensions = new Coordinate (2,2,2),
                  show = true) {
         this.position = position;
         this.angle = angle;
@@ -771,7 +821,8 @@ class Sprite {
         transparency: false,
         preProcessor: false,
         postProcessor: false,
-        thread: false
+        thread: false,
+        node: false
     }
 
     /**
@@ -785,7 +836,8 @@ class Sprite {
      *          "transparency" |
      *          "preProcessor" |
      *          "postProcessor" |
-     *          "thread")} option 
+     *          "thread" |
+     *          "node")} option 
      * @param {Boolean | ("toggle" |
      *                    "active" |
      *                    "inactive")} val toggle value
@@ -881,12 +933,21 @@ class Sprite {
     }
 
     /**
-     * @todo not ready for use
+     * Makes this sprite a thread execution origin.
      * @param {Thread} thread thread that can be run if the parent object has subSprites enabled or the sprite is directly inputted into the runThread function
      */
     addThread (thread) {
         this.thread = thread;
         this.toggleOption("thread","active");
+    }
+
+    /**
+     * Makes this sprite a thread execution node.
+     * @param {ChainedFunctions} node node that can be pushed onto the thread tree.
+     */
+    addNode (node) {
+        this.node = node;
+        this.toggleOption("node","active");
     }
 
     /**
@@ -911,7 +972,7 @@ class Sprite {
     /**
      * Checks if two sprites are overlapping assuming they both inhabit the same reference sphere.
      * @param {Sprite} sprite compared sprite
-     * @returns if the sprites are overlapping
+     * @returns {Boolean} if the sprites are overlapping
      */
     localOverlapping (sprite) {
         let negativeBorderA = this.position.difference(this.dimensions.unscale(2));
@@ -925,6 +986,28 @@ class Sprite {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Checks wether the position falls within the bounds of this sprite globally.
+     * @param {Coordinate} position compared position
+     * @returns {Boolean} wether the position falls within the bounds of this sprite globally
+     */
+    onSprite (position) {
+        let negativeBorder = this.absolutePosition.difference(this.absoluteDimensions.unscale(2));
+        let positiveBorder = this.absolutePosition.add(this.absoluteDimensions.unscale(2));
+        return position.inRange(negativeBorder,positiveBorder);
+    }
+
+    /**
+     * Checks wether the position falls within the bounds of this sprite locally.
+     * @param {Coordinate} position compared position
+     * @returns {Boolean} wether the position falls within the bounds of this sprite locally
+     */
+    localOnSprite (position) {
+        let negativeBorder = this.position.difference(this.dimensions.unscale(2));
+        let positiveBorder = this.position.add(this.dimensions.unscale(2));
+        return position.inRange(negativeBorder,positiveBorder);
     }
 
     /**
@@ -953,7 +1036,7 @@ class Sprite {
  */
 class ChainedFunctions {
     functions = []
-    pointer = 0;
+    pointer = -1;
     finished = false;
     returnVal;
 
@@ -1003,7 +1086,7 @@ class ChainedFunctions {
         if (this.end()) {
             return false;
         }
-        return functions[pointer];
+        return this.functions[this.pointer];
     }
 
     /**
@@ -1167,7 +1250,7 @@ class Thread {
      * @returns {Boolean} wether the chained function could be called
      */
     callNext () {
-        if (timeout > 0) {
+        if (this.timeout > 0) {
             this.timeout--;
             return true;
         }
@@ -1204,10 +1287,19 @@ class Thread {
 
     /**
      * Pushes chained functions onto the thread tree
-     * @param {ChainedFunctions} chain chain functions to be pushed
+     * @param {ChainedFunctions | Sprite} chain chain functions to be pushed
      */
     push (chain) {
-        this.tree.push (chain);
+        if (chain instanceof ChainedFunctions) {
+            this.tree.push (chain);
+            return;
+        }
+        if (chain instanceof Sprite) {
+            if (!chain.options.node) {
+                return;
+            }
+            this.tree.push (chain.node);
+        }
     }
 
     /**
@@ -1487,7 +1579,7 @@ class EventStream {
      * @returns {Boolean} wether the stream is empty
      */
     empty () {
-        return this.stream.length < 1;
+        return this.stream.length <= 0;
     }
 
     /**
@@ -1495,7 +1587,7 @@ class EventStream {
      * @param {boolean} completed wether the task should be marked as completed
      * @returns {*} oldest event task
      */
-    first (completed) {
+    first (completed = true) {
         if (this.empty()) {
             return false;
         }
@@ -1504,6 +1596,7 @@ class EventStream {
     }
 
     /**
+     * @todo needs to be fixed to only give uncompleted events
      * Gets the most recent event task and returns it.
      * @param {boolean} completed wether the task should be marked as completed
      * @returns {*} most recent event task
@@ -1514,6 +1607,13 @@ class EventStream {
         }
         this.stream[this.stream.length - 1].completed = completed;
         return this.stream[this.stream.length - 1].val;
+    }
+    
+    recentUncompleted (completed = true) {
+        let uncompleted = this.stream.filter()
+        if (this.empty()) {
+            return false;
+        }
     }
 
     /**
