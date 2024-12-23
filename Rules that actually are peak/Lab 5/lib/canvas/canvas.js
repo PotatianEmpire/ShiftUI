@@ -244,7 +244,7 @@ class Coordinate {
      * @param {Number | true} y y value, true will copy the old value
      * @param {Number | true} z z value, true will copy the old value
      */
-    assignVal (x,y,z) {
+    assignVal (x = this.x,y = this.y,z = this.z) {
         let ax = x;
         let ay = y;
         let az = z;
@@ -619,20 +619,25 @@ class Canvas {
 
         let screenDimension = new Coordinate(this.width,this.height);
         let screenCenter = Coordinate.unscale(screenDimension,2);
-
-        let projectedPosition = Coordinate.unscale(sprite.absolutePosition,sprite.absolutePosition.z + 1);
-        let projectedDimension = Coordinate.unscale(sprite.absoluteDimensions,sprite.absolutePosition.z + 1);
-        let drawSize = Coordinate.scale(projectedDimension,screenCenter.x);
-        let spriteCenter = Coordinate.unscale(drawSize,2);
-        let centeredDrawLocation = Coordinate.add(Coordinate.scale(projectedPosition,screenCenter.x),screenCenter);
-        let alignedDrawLocation = Coordinate.difference(centeredDrawLocation,spriteCenter);
         
+        if (absoluteCoordinate.z > -1) {
+            let projectedPosition = Coordinate.unscale(sprite.absolutePosition,sprite.absolutePosition.z + 1);
+            let projectedDimension = Coordinate.unscale(sprite.absoluteDimensions,sprite.absolutePosition.z + 1);
+            let drawSize = Coordinate.scale(projectedDimension,screenCenter.x);
+            let spriteCenter = Coordinate.unscale(drawSize,2);
+            let centeredDrawLocation = Coordinate.add(Coordinate.scale(projectedPosition,screenCenter.x),screenCenter);
+            let alignedDrawLocation = Coordinate.difference(centeredDrawLocation,spriteCenter);
 
-        sprite.drawOptions.projectedPosition.assign(projectedPosition);
-        sprite.drawOptions.projectedDimension.assign(projectedDimension);
-        sprite.drawOptions.centeredDrawLocation.assign(centeredDrawLocation);
-        sprite.drawOptions.alignedDrawLocation.assign(alignedDrawLocation);
-        sprite.drawOptions.drawSize.assign(drawSize);
+            sprite.drawOptions.projectedPosition.assign(projectedPosition);
+            sprite.drawOptions.projectedDimension.assign(projectedDimension);
+            sprite.drawOptions.centeredDrawLocation.assign(centeredDrawLocation);
+            sprite.drawOptions.alignedDrawLocation.assign(alignedDrawLocation);
+            sprite.drawOptions.drawSize.assign(drawSize);
+
+            sprite.drawOptions.visible = true;
+        } else {
+            sprite.drawOptions.visible = false;
+        }
 
         if (sprite.options.particleEmitter) {
             sprite.particleEmitter.particles.forEach(particle => {
@@ -647,20 +652,28 @@ class Canvas {
                     ),
                     reference.absolutePosition
                 );
-                let projectedParticlePosition = Coordinate.unscale (
-                    Coordinate.unscale(absoluteParticlePosition,absoluteParticlePosition.z)
-                );
-                let particleDrawPosition = Coordinate.add (
-                    Coordinate.scale (
-                        projectedParticlePosition,
-                        screenCenter.x
-                    ),
-                    screenCenter
-                );
+                if (absoluteParticlePosition.z > -1) {
+                    let projectedParticlePosition = Coordinate.unscale (
+                        Coordinate.unscale(absoluteParticlePosition,absoluteParticlePosition.z + 1)
+                    );
+                    let particleDrawPosition = Coordinate.add (
+                        Coordinate.scale (
+                            projectedParticlePosition,
+                            screenCenter.x
+                        ),
+                        screenCenter
+                    );
+
+                    particle.drawOptions.projectedPosition.assign(projectedParticlePosition);
+                    particle.drawOptions.particleDrawPosition.assign(particleDrawPosition);
+
+                    particle.drawOptions.visible = true;
+                } else {
+                    particle.drawOptions.visible = false;
+                }
+                
                 particle.drawOptions.deltaAbsoluteCoordinate.assign(Coordinate.difference(absoluteParticlePosition,particle.drawOptions.absoluteCoordinate));
                 particle.drawOptions.absoluteCoordinate.assign(absoluteParticlePosition);
-                particle.drawOptions.projectedPosition.assign(projectedParticlePosition);
-                particle.drawOptions.particleDrawPosition.assign(particleDrawPosition);
             })
         }
     }
@@ -685,56 +698,58 @@ class Canvas {
                 while (!sprite.preProcessor.callNext());
             }
 
-            if (sprite.options.transparency) {
-                this.context.globalAlpha = sprite.transparency;
-            }
-
-            if (sprite.options.image) {
-                this.context.drawImage(sprite.image,
-                    sprite.drawOptions.alignedDrawLocation.x,
-                    sprite.drawOptions.alignedDrawLocation.y,
-                    sprite.drawOptions.drawSize.x,
-                    sprite.drawOptions.drawSize.y);
-            }
-
-            if (sprite.options.sample) {
-                let sampleLocation = sprite.sample.getAbsoluteLocation();
-                let sampleSize = sprite.sample.getAbsoluteSize();
-                this.context.drawImage(sprite.sample.image,
-                    sampleLocation.x,sampleLocation.y,
-                    sampleSize.x,sampleSize.y,
-                    sprite.drawOptions.alignedDrawLocation.x,
-                    sprite.drawOptions.alignedDrawLocation.y,
-                    sprite.drawOptions.drawSize.x,
-                    sprite.drawOptions.drawSize.y);
-            }
-
-            if (sprite.options.text) {
-                let alignedTextLocation = new Coordinate ();
-                alignedTextLocation.assign(sprite.drawOptions.alignedDrawLocation);
-                sprite.text.text.forEach((formattedString,i) => {
-                    this.context.font = (formattedString.fontSize * sprite.drawOptions.drawSize.x) + "px " + formattedString.fontFamily;
-                    this.context.fillStyle = formattedString.color;
-                    this.context.textAlign = formattedString.align;
-                    let formattedStringLocation = new Coordinate ();
-                    formattedStringLocation.assign(alignedTextLocation);
-                    formattedStringLocation.y += (i * formattedString.lineSpacing * sprite.drawOptions.drawSize.x);
-                    switch (formattedString.align) {
-                        case "left":
-                            formattedStringLocation.x = sprite.drawOptions.alignedDrawLocation.x;
-                            break;
-                        case "right":
-                            formattedStringLocation.x += sprite.drawOptions.drawSize.x;
-                            break;
-                        case "center":
-                            formattedStringLocation.x = sprite.drawOptions.centeredDrawLocation.x;
-                            break;
-                    }
-                    this.context.fillText(formattedString.text,
-                        formattedStringLocation.x,
-                        formattedStringLocation.y,
-                        sprite.drawOptions.drawSize.x);                    
-                })
+            if (sprite.drawOptions.visible) {
+                if (sprite.options.transparency) {
+                    this.context.globalAlpha = sprite.transparency;
+                }
+    
+                if (sprite.options.image) {
+                    this.context.drawImage(sprite.image,
+                        sprite.drawOptions.alignedDrawLocation.x,
+                        sprite.drawOptions.alignedDrawLocation.y,
+                        sprite.drawOptions.drawSize.x,
+                        sprite.drawOptions.drawSize.y);
+                }
+    
+                if (sprite.options.sample) {
+                    let sampleLocation = sprite.sample.getAbsoluteLocation();
+                    let sampleSize = sprite.sample.getAbsoluteSize();
+                    this.context.drawImage(sprite.sample.image,
+                        sampleLocation.x,sampleLocation.y,
+                        sampleSize.x,sampleSize.y,
+                        sprite.drawOptions.alignedDrawLocation.x,
+                        sprite.drawOptions.alignedDrawLocation.y,
+                        sprite.drawOptions.drawSize.x,
+                        sprite.drawOptions.drawSize.y);
+                }
+    
+                if (sprite.options.text) {
+                    let alignedTextLocation = new Coordinate ();
+                    alignedTextLocation.assign(sprite.drawOptions.alignedDrawLocation);
+                    sprite.text.text.forEach((formattedString,i) => {
+                        this.context.font = (formattedString.fontSize * sprite.drawOptions.drawSize.x) + "px " + formattedString.fontFamily;
+                        this.context.fillStyle = formattedString.color;
+                        this.context.textAlign = formattedString.align;
+                        let formattedStringLocation = new Coordinate ();
+                        formattedStringLocation.assign(alignedTextLocation);
+                        formattedStringLocation.y += (i * formattedString.lineSpacing * sprite.drawOptions.drawSize.x);
+                        switch (formattedString.align) {
+                            case "left":
+                                formattedStringLocation.x = sprite.drawOptions.alignedDrawLocation.x;
+                                break;
+                            case "right":
+                                formattedStringLocation.x += sprite.drawOptions.drawSize.x;
+                                break;
+                            case "center":
+                                formattedStringLocation.x = sprite.drawOptions.centeredDrawLocation.x;
+                                break;
+                        }
+                        this.context.fillText(formattedString.text,
+                            formattedStringLocation.x,
+                            formattedStringLocation.y,
+                            sprite.drawOptions.drawSize.x);                    
+                    })
+                }
             }
 
             if (sprite.options.postProcessor) {
@@ -746,10 +761,15 @@ class Canvas {
                 sprite.particleEmitter.emitter.restart();
                 while (!sprite.particleEmitter.emitter.callNext());
                 sprite.particleEmitter.particles = sprite.particleEmitter.particles.filter(particle => {
-                    this.context.translate(particle.drawOptions.particleDrawPosition.x,particle.drawOptions.particleDrawPosition.y);
-                    particle.behaviour.restart();
-                    while (!particle.behaviour.callNext());
-                    this.context.translate(-particle.drawOptions.particleDrawPosition.x,-particle.drawOptions.particleDrawPosition.y);
+                    if (particle.drawOptions.visible) {
+                        this.context.translate(particle.drawOptions.particleDrawPosition.x,particle.drawOptions.particleDrawPosition.y);
+                        particle.behaviour.restart();
+                        while (!particle.behaviour.callNext());
+                        this.context.translate(-particle.drawOptions.particleDrawPosition.x,-particle.drawOptions.particleDrawPosition.y);
+                    } else {
+                        particle.behaviour.restart();
+                        while (!particle.behaviour.callNext());
+                    }
                 });
             }
         }
@@ -775,6 +795,8 @@ class Sprite {
     absoluteDimensions = new Coordinate (2,2,2);
 
     drawOptions = {
+        visible: true,
+
         position: new Coordinate (),
         dimensions: new Coordinate (),
         angle: new Coordinate (),
@@ -822,12 +844,12 @@ class Sprite {
         preProcessor: false,
         postProcessor: false,
         thread: false,
-        node: false
+        node: false,
+        eventStream: false
     }
 
     /**
-     * Toggles selected option.
-     * @param {("show" |
+     * @typedef {("show" |
      *          "text" |
      *          "image" |
      *          "sample" |
@@ -837,27 +859,41 @@ class Sprite {
      *          "preProcessor" |
      *          "postProcessor" |
      *          "thread" |
-     *          "node")} option 
+     *          "node" |
+     *          "eventStream")} SpriteOptions
+     */
+
+    /**
+     * Toggles selected option.
+     * @param {Array<SpriteOptions> | SpriteOptions} option one or more sprite options to toggle
      * @param {Boolean | ("toggle" |
      *                    "active" |
      *                    "inactive")} val toggle value
      */
     toggleOption (option,val = "toggle") {
-        if (typeof val == "boolean") {
-            this.options[option] = val;
-            return;
+        let optionArr;
+        if (Array.isArray(option)) {
+            optionArr = option;
+        } else {
+            optionArr = [option];
         }
-        switch (val) {
-            case "toggle":
-                this.options[option] = !this.options[option];
-                break;
-            case "active":
-                this.options[option] = true;
-                break;
-            case "inactive":
-                this.options[option] = false;
-                break;
-        }
+        optionArr.forEach(toggleOpt => {
+            if (typeof val == "boolean") {
+                this.options[toggleOpt] = val;
+                return;
+            }
+            switch (val) {
+                case "toggle":
+                    this.options[toggleOpt] = !this.options[toggleOpt];
+                    break;
+                case "active":
+                    this.options[toggleOpt] = true;
+                    break;
+                case "inactive":
+                    this.options[toggleOpt] = false;
+                    break;
+            }
+        })
     }
 
     /**
@@ -936,7 +972,7 @@ class Sprite {
      * Makes this sprite a thread execution origin.
      * @param {Thread} thread thread that can be run if the parent object has subSprites enabled or the sprite is directly inputted into the runThread function
      */
-    addThread (thread) {
+    addThread (thread = new Thread()) {
         this.thread = thread;
         this.toggleOption("thread","active");
     }
@@ -948,6 +984,15 @@ class Sprite {
     addNode (node) {
         this.node = node;
         this.toggleOption("node","active");
+    }
+
+    /**
+     * Adds and enables event stream on this sprite.
+     * @param {EventStream} eventStream event stream to add
+     */
+    addEventStream (eventStream = new EventStream()) {
+        this.eventStream = eventStream;
+        this.toggleOption("eventStream","active");
     }
 
     /**
@@ -1164,6 +1209,7 @@ class Particle {
     destroyed = false;
 
     drawOptions = {
+        visible: true,
         absoluteCoordinate: new Coordinate (),
         deltaAbsoluteCoordinate: new Coordinate (),
         projectedPosition: new Coordinate (),
@@ -1546,19 +1592,39 @@ class Sample {
     }
 }
 
-/**
- * An event that is a completeable task.
- */
-class EventTask {
-    completed = false;
-    val;
+class EventDistributor {
+    streams;
+    /**
+     * Creates an event distributor object.
+     * @param {Array<EventStream>} streams streams to add initially
+     */
+    constructor (streams = []) {
+        this.streams = streams;
+    }
 
     /**
-     * Creates an event task object.
-     * @param {*} val event value
+     * Adds a stream to the distribution network.
+     * @param {EventStream | Array<EventStream> | Sprite} stream stream to add
      */
-    constructor (val = true) {
-        this.val = val;
+    addStream (stream) {
+        if (stream instanceof Sprite) {
+            if (!stream.options.eventStream) {
+                stream.addEventStream();
+            }
+            this.streams.push(stream.eventStream);
+            return;
+        }
+        this.streams.push(...stream);
+    }
+    
+    /**
+     * Adds event task to all event streams in the network.
+     * @param {*} ev event to add
+     */
+    distribute (ev) {
+        this.streams.forEach(stream => {
+            stream.pushEvent(ev);
+        })
     }
 }
 
@@ -1566,7 +1632,6 @@ class EventTask {
  * A collection of event tasks.
  */
 class EventStream {
-    /** @type {Array<EventTask>} */
     stream = [];
 
     /**
@@ -1591,8 +1656,10 @@ class EventStream {
         if (this.empty()) {
             return false;
         }
-        this.stream[0].completed = completed;
-        return this.stream[0].val;
+        if (completed) {
+            return this.stream.shift();
+        }
+        return this.stream[0];
     }
 
     /**
@@ -1605,15 +1672,10 @@ class EventStream {
         if (this.empty()) {
             return false;
         }
-        this.stream[this.stream.length - 1].completed = completed;
-        return this.stream[this.stream.length - 1].val;
-    }
-    
-    recentUncompleted (completed = true) {
-        let uncompleted = this.stream.filter()
-        if (this.empty()) {
-            return false;
+        if (completed) {
+            return this.stream.pop();
         }
+        return this.stream[this.stream.length - 1];
     }
 
     /**
@@ -1621,17 +1683,16 @@ class EventStream {
      * @param {*} val event added
      */
     pushEvent (val) {
-        this.stream.push(new EventTask(val));
+        this.stream.push(val);
     }
 
     /**
      * Iterates over each event task and call the handler with them in order of insertion.
-     * @param {{(eventVal: *, completed: boolean): boolean}} handler called on each event task and completes event task unless handler returns true
+     * @param {{(eventVal: *): boolean}} handler called on each event task and completes event task unless handler returns true
      */
     handleEvents (handler) {
-        for (let index = 0; index < this.stream.length; index++) {
-            const element = this.stream[index];
-            element.completed = !handler(element.val,element.completed);
+        while(this.recent(false)) {
+            this.recent(handler(this.recent(false)))
         }
     }
     
@@ -1640,12 +1701,5 @@ class EventStream {
      */
     clear () {
         this.stream = [];
-    }
-
-    /**
-     * Clears all completed event tasks.
-     */
-    clearCompleted () {
-        this.stream = this.stream.filter(eventTask => !eventTask.completed);
     }
 }

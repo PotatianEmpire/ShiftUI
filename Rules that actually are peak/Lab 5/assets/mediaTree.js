@@ -58,5 +58,6 @@ let media = {
     fonts: {}
 }
 
-mediaInterface.images.reqeustSamples(media.images.testSprite,media.images.testSprite.image,"./assets/images/testSprite.png")
-mediaInterface.images.reqeustSamples(media.images.highlightedTestSprite,media.images.highlightedTestSprite.image,"./assets/images/testSpriteHighlighted.png")
+mediaInterface.images.reqeustSamples(media.images.testSprite,media.images.testSprite.image,"./assets/images/testSprite.png");
+mediaInterface.images.reqeustSamples(media.images.highlightedTestSprite,media.images.highlightedTestSprite.image,"./assets/images/testSpriteHighlighted.png");
+mediaInterface.images.reqeustSamples(media.images.title.backdrop,media.images.title.backdrop.image,"./assets/images/titleTest.png");

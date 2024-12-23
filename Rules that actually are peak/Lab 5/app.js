@@ -1,19 +1,31 @@
 let lab5App = {
     subSprites: {
+
         titleScreen: {
             subSprites: {
                 clearCache: {},
                 next: {},
             }
         },
+
         loadingScreen: {},
+
         menu: {},
-        settings: {},
+
+        settings: {},                                   
+
         mouse: {
             subSprites: {
-                mouseUp: {},
-                mouseDown: {}
+                
+                normalMode: {
+                    subSprites: {
+                        mouseDown: {},
+                        mouseUp: {}
+                    }
+                }
+
             }
         }
+
     }
 }

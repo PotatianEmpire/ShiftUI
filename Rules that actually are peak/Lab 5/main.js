@@ -2,21 +2,20 @@ let canvas = new Canvas("view");
 let lab5 = new Sprite ();
 
 function init () {
-    constructMouse()
+    constructMouseNormalMode();
+    constructMouse();
+    constructTitleScreen();
     constructLab5();
 }
 
 
 function main () {
 
-    canvas.prepareRender(lab5);
-    console.log("----- rendering prepared -----");
-
     canvas.runThreads(lab5);
     console.log("----- threads completed running -----");
-    
-    mouseEvents.mouseDown.clearCompleted();
-    mouseEvents.mouseUp.clearCompleted();
+
+    canvas.prepareRender(lab5);
+    console.log("----- rendering prepared -----");
 
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;

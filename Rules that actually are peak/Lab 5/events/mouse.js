@@ -1,87 +1,47 @@
 let mouseEvents = {
-    mouseDown: new EventStream(),
-    mouseUp: new EventStream(),
-    mouseScroll: new EventStream()
+    mouseDown: new EventDistributor(),
+    mouseUp: new EventDistributor(),
+    mousePress: false,
+    mouseScroll: new EventDistributor()
 }
 
 function constructMouse () {
     let mouse = new Sprite();
 
-    mouse.dimensions.assignVal(0.1,0.1,0.1);
+    mouse.dimensions.assignVal(0.2,0.2);
 
-    let mouseUp = new Sprite(new Coordinate(),new Coordinate(),new Coordinate(2,2,0.1));
-    let mouseDown = new Sprite(new Coordinate(),new Coordinate(),new Coordinate(2,2,0.1));
+    //mouse.toggleOption(["show","subSprites"],"inactive");
     
-    mouseUp.addSample(media.images.testSprite.arrow);
-    mouseDown.addSample(media.images.highlightedTestSprite.arrow);
-
-    mouse.addThread(new Thread());
-
-    mouseUp.addNode(new ChainedFunctions([
-        () => {
-            mouseUp.toggleOption("show","active");
-        },
-        () => {
-            if (mouseEvents.mouseDown.recent()) {
-                mouseUp.toggleOption("show","inactive");
-                mouseUp.node.return();
-                return;
-            }
-            mouse.thread.postpone();
-            mouseUp.node.goto("loop");
-        }
-    ]));
-
-    mouseDown.addNode(new ChainedFunctions([
-        () => {
-            mouseDown.toggleOption("show","active");
-        },
-        () => {
-            if (mouseEvents.mouseUp.recent()) {
-                mouseDown.toggleOption("show","inactive");
-                mouseDown.node.return();
-                return;
-            }
-            mouse.thread.postpone();
-            mouseDown.node.goto("loop");
-        }
-    ]));
-
-    mouse.addNode(new ChainedFunctions([
-        () => {
-            mouseUp.node.restart();
-            mouse.thread.push(mouseUp);
-        },
-        () => {
-            mouseDown.node.restart();
-            mouse.thread.push(mouseDown);
-            mouse.node.goto("start");
-            mouseEvents.mouseDown.clearCompleted();
-            mouseEvents.mouseUp.clearCompleted();
-        }
-    ]));
-
-    mouse.thread.push(mouse);
-
-    console.log(mouse);
-    
-
-    mouse.addSubSprites({mouseDown: mouseDown,mouseUp: mouseUp});
+    mouse.addSubSprites(lab5App.subSprites.mouse.subSprites);
 
     document.addEventListener("mousedown",(ev) => {
-        mouseEvents.mouseDown.pushEvent(ev);
+        if (!mouseEvents.mousePress) {
+            mouseEvents.mousePress = true;
+            mouseEvents.mouseDown.distribute(ev);
+        } else {
+            mouseEvents.mousePress = true;
+            mouseEvents.mouseUp.distribute(ev);
+            mouseEvents.mouseDown.distribute(ev);
+        }
     });
 
     document.addEventListener("mouseup",(ev) => {
-        mouseEvents.mouseUp.pushEvent(ev);
+        if (mouseEvents.mousePress) {
+            mouseEvents.mousePress = false;
+            mouseEvents.mouseUp.distribute(ev);
+        } else {
+            mouseEvents.mousePress = false;
+            mouseEvents.mouseDown.distribute(ev);
+            mouseEvents.mouseUp.distribute(ev);
+        }
     });
     
     document.addEventListener("scroll",(ev) => {
-        mouseEvents.mouseScroll.pushEvent(ev);
+        mouseEvents.mouseScroll.distribute(ev);
     });
     
     document.addEventListener("mousemove",(ev) => {
-        mouse.position.assignVal(ev.x,ev.y,0);
+        mouse.position.assignVal(ev.x,ev.y);
         mouse.position.assign( mouse.position.unscale(canvas.width/2).difference(canvas.centerPoint));
     });
 
