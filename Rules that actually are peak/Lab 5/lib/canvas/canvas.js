@@ -476,17 +476,6 @@ class Canvas {
         if (depth >= this.maxDepth) {
             return;
         }
-        if (sprites instanceof Sprite) {
-            if (sprites.options.thread) {
-                while (!sprites.thread.callNext());
-            }
-
-            if (sprites.options.subSprites) {
-                this.runThreads(sprites.subSprites,depth + 1);
-            }
-
-            return;
-        }
         SubSprites.forEach(sprites,sprite => {
             if (sprite.options.thread) {
                 while (!sprite.thread.callNext());
@@ -499,6 +488,27 @@ class Canvas {
     }
 
     /**
+     * Executes preprocessors on all sprites and activate subSprites.
+     * @param {Array<Sprite> | SubSprites | Sprite} sprites sprites to preprocess
+     * @param {Number} depth depth of subSprite rendering [max 100]
+     */
+    runPreProcessors (sprites,depth = 0) {
+        if (depth >= this.maxDepth) {
+            return;
+        }
+        SubSprites.forEach(sprites,sprite => {
+            if (sprite.options.preProcessor) {
+                sprite.preProcessor.restart();
+                while(!sprite.preProcessor.callNext());
+            }
+
+            if (sprite.options.subSprites) {
+                this.runPreProcessors(sprite.subSprites,depth + 1);
+            }
+        })
+    }
+
+    /**
      * Prepares sprites for rendering.
      * @param {Array<Sprite> | SubSprites | Sprite} sprites sprites to prepare
      * @param {Sprite} reference sprite position refers to parent sprites
@@ -506,15 +516,6 @@ class Canvas {
      */
     prepareRender (sprites, reference = new Sprite (), depth = 0) {
         if (depth >= this.maxDepth) {
-            return;
-        }
-        if (sprites instanceof Sprite) {
-            this.calcPos(sprites,reference);
-
-            if (sprites.options.subSprites) {
-                this.prepareRender(sprites.subSprites,sprites,depth + 1);
-            }
-
             return;
         }
         SubSprites.forEach(sprites,sprite => {
@@ -533,15 +534,6 @@ class Canvas {
      */
     render (sprites, depth = 0) {
         if (depth >= this.maxDepth) {
-            return;
-        }
-        if (sprites instanceof Sprite) {
-            this.draw(sprites);
-
-            if (sprites.options.subSprites) {
-                this.render(sprites.subSprites,depth + 1);
-            }
-
             return;
         }
         SubSprites.forEach(sprites,sprite => {
@@ -693,11 +685,6 @@ class Canvas {
             this.context.rotate(sprite.absoluteAngle.z * Coordinate.angleFactor);
             this.context.translate(-sprite.drawOptions.centeredDrawLocation.x,-sprite.drawOptions.centeredDrawLocation.y);
 
-            if (sprite.options.preProcessor) {
-                sprite.preProcessor.restart();
-                while (!sprite.preProcessor.callNext());
-            }
-
             if (sprite.drawOptions.visible) {
                 if (sprite.options.transparency) {
                     this.context.globalAlpha = sprite.transparency;
@@ -845,7 +832,8 @@ class Sprite {
         postProcessor: false,
         thread: false,
         node: false,
-        eventStream: false
+        eventStream: false,
+        eventDistributor: false
     }
 
     /**
@@ -860,7 +848,8 @@ class Sprite {
      *          "postProcessor" |
      *          "thread" |
      *          "node" |
-     *          "eventStream")} SpriteOptions
+     *          "eventStream" |
+     *          "eventDistributor")} SpriteOptions
      */
 
     /**
@@ -996,6 +985,15 @@ class Sprite {
     }
 
     /**
+     * Adds and enables event distributor on this sprite.
+     * @param {EventDistributor} eventDistributor event ditributor to add
+     */
+    addEventDistributor (eventDistributor = new EventDistributor()) {
+        this.eventDistributor = eventDistributor;
+        this.toggleOption("eventDistributor","active");
+    }
+
+    /**
      * Checks if two sprites are overlapping globally.
      * @param {Sprite} sprite compared sprite
      * @returns {Boolean} if the sprites are overlapping
@@ -1077,6 +1075,56 @@ class Sprite {
 }
 
 /**
+ * Version: 1.0
+ * 
+ *         ______ ________________  _____  ____________  ______ 
+ *        / __/ // /  _/ __/_  __/ / __/ |/ / ___/  _/ |/ / __/
+ *       _\ \/ _  // // _/  / /   / _//    / (_ // //    / _/  
+ *      /___/_//_/___/_/   /_/   /___/_/|_/\___/___/_/|_/___/  
+ * 
+ */
+class ShiftEngine {
+    canvas;
+    app = new Sprite();
+    fps = 60;
+
+    /**
+     * Creates an application using the Shift engine.
+     * @param {String} id canvas id from html document
+     * @param {Sprite | SubSprites | Array<Sprite>} app application
+     */
+    constructor (id,app) {
+        this.canvas = new Canvas(id);
+        this.app = app;
+    }
+
+    start () {
+        setInterval(() => {
+            this.main();
+        },1000/this.fps);
+    }
+
+    main () {
+        canvas.runThreads(lab5);
+        // console.log("----- threads completed running -----");
+
+        canvas.runPreProcessors(lab5);
+        // console.log("----- completed running preprocessors");
+
+        canvas.prepareRender(lab5);
+        // console.log("----- rendering prepared -----");
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        canvas.clear();
+        // console.log("----- frame cleared and window size adjusted -----");
+
+        canvas.render(lab5);
+        // console.log("----- new frame -----");
+    }
+}
+
+/**
  * Collection of functions called in order.
  */
 class ChainedFunctions {
@@ -1084,6 +1132,7 @@ class ChainedFunctions {
     pointer = -1;
     finished = false;
     returnVal;
+    args;
 
     /**
      * Constructs an chained functions object.
@@ -1095,10 +1144,10 @@ class ChainedFunctions {
 
     /**
      * Calls next chained function.
-     * @param {*} args arguments to pass into the chained function
      * @returns {Boolean} returns true if the chain has completed execution
      */
-    callNext (args) {
+    callNext () {
+        console.log(this.pointer)
         this.finished = false;
         this.increment();
         let func = this.get();
@@ -1106,7 +1155,7 @@ class ChainedFunctions {
             this.finished = true;
             return true;
         }
-        this.returnVal = func(args);
+        this.returnVal = func(this.args);
         if (this.finished) {
             return true;
         }
@@ -1202,6 +1251,94 @@ class ChainedFunctions {
     }
 }
 
+/**
+ * An object to manage multiple chainedFunctions objects.
+ */
+class Thread {
+    tree = [];
+    timeout = 0;
+
+    /**
+     * Creates a thread object.
+     * @param {Array<Array<ChainedFunctions>>} tree chainedFunctions to be added
+     */
+    constructor (tree = []) {
+        this.tree = tree;
+    }
+
+    /**
+     * Calls next chained function from the tree.
+     * @returns {Boolean} wether the chained function could be called
+     */
+    callNext () {
+        if (this.timeout > 0) {
+            this.timeout--;
+            return true;
+        }
+        let chain = this.get();
+        if (!chain) {
+            return true;
+        }
+        this.tree[this.tree.length - 1] = chain.filter(chainedFunctions => {
+            chainedFunctions.callNext();
+            if (chainedFunctions.finished) {
+                return false;
+            }
+            return true;
+        })
+        if (this.tree[this.tree.length - 1] <= 0) {
+            this.tree.pop();
+        }
+        return false;
+    }
+
+    /**
+     * Checks if the tree is empty.
+     * @returns {Boolean} wether the tree is empty or not
+     */
+    empty () {
+        return this.tree.length <= 0;
+    }
+
+    /**
+     * Fetches the current chained function array.
+     * @returns {Array<ChainedFunctions> | false} returns the fetched chained function array
+     */
+    get () {
+        if (this.empty()) {
+            return false;
+        }
+        return this.tree[this.tree.length - 1];
+    }
+
+    /**
+     * Pushes chained functions onto the thread tree
+     * @param {ChainedFunctions | Array<ChainedFunctions> | Sprite | SubSprites | Array<Sprite>} chain chain functions to be pushed
+     */
+    push (chain) {
+        let branch = [];
+        let isSprite = false;
+        SubSprites.forEach(chain,sprite => {
+            isSprite = true;
+            if (sprite.options.node) {
+                branch.push(sprite.node);
+            }
+        })
+        if (!isSprite) {
+            branch = [...chain];
+        }
+        this.tree.push(branch);
+    }
+
+    /**
+     * Postpones the execution of the callNext function.
+     * @param {Number} calls number of callNext function call the execution should be postponed by
+     */
+    postpone (calls = 1) {
+        this.timeout = calls;
+    }
+}
+
 class Particle {
     behaviour;
     position;
@@ -1276,88 +1413,6 @@ class ParticleEmitter {
 }
 
 /**
- * An object to manage multiple chainedFunctions objects.
- */
-class Thread {
-    tree = [];
-    timeout = 0;
-    args;
-
-    /**
-     * Creates a thread object.
-     * @param {Array<ChainedFunctions>} tree chainedFunctions to be added
-     */
-    constructor (tree = []) {
-        this.tree = tree;
-    }
-
-    /**
-     * Calls next chained function from the tree.
-     * @returns {Boolean} wether the chained function could be called
-     */
-    callNext () {
-        if (this.timeout > 0) {
-            this.timeout--;
-            return true;
-        }
-        let chain = this.get();
-        if (!chain) {
-            return true;
-        }
-        chain.callNext(this.args);
-        this.args = chain.returnVal;
-        if (chain.finished) {
-            this.tree.pop();
-        }
-        return false;
-    }
-
-    /**
-     * Checks if the tree is empty.
-     * @returns {Boolean} wether the tree is empty or not
-     */
-    empty () {
-        return this.tree.length <= 0;
-    }
-
-    /**
-     * Fetches the current chained function.
-     * @returns {ChainedFunctions | false} returns the fetched chained function
-     */
-    get () {
-        if (this.empty()) {
-            return false;
-        }
-        return this.tree[this.tree.length - 1];
-    }
-
-    /**
-     * Pushes chained functions onto the thread tree
-     * @param {ChainedFunctions | Sprite} chain chain functions to be pushed
-     */
-    push (chain) {
-        if (chain instanceof ChainedFunctions) {
-            this.tree.push (chain);
-            return;
-        }
-        if (chain instanceof Sprite) {
-            if (!chain.options.node) {
-                return;
-            }
-            this.tree.push (chain.node);
-        }
-    }
-
-    /**
-     * Postpones the execution of the callNext function.
-     * @param {Number} calls number of callNext function call the execution should be postponed by
-     */
-    postpone (calls = 1) {
-        this.timeout = calls;
-    }
-}
-
-/**
  * Iterable collection of sprites.
  */
 class SubSprites {
@@ -1381,11 +1436,15 @@ class SubSprites {
 
     /**
      * Calls the callback for each sprite in the Array or subSprites object.
-     * @param {Array<Sprite>|SubSprites} sprites Array or subSprites object to iterate over.
-     * @param {{(sprite: Sprite, key: String | Number) : void}} callback Called for each sprite once.
+     * @param {Array<Sprite> | SubSprites | Sprite} sprites Array or subSprites object to iterate over.
+     * @param {{(sprite: Sprite, key: String | Number | null) : void}} callback Called for each sprite once.
      */
     static forEach (sprites,callback) {
         if (typeof callback != "function") {
+            return;
+        }
+        if (sprites instanceof Sprite) {
+            callback(sprites,null);
             return;
         }
         if (Array.isArray(sprites)) {
@@ -1604,17 +1663,20 @@ class EventDistributor {
 
     /**
      * Adds a stream to the distribution network.
-     * @param {EventStream | Array<EventStream> | Sprite} stream stream to add
+     * @param {EventStream | Array<EventStream> | Sprite | Array<Sprite> | SubSprites} stream stream to add
      */
     addStream (stream) {
-        if (stream instanceof Sprite) {
-            if (!stream.options.eventStream) {
-                stream.addEventStream();
+        let isSprite = false;
+        SubSprites.forEach(stream,sprite => {
+            if (!sprite.options.eventStream) {
+                sprite.addEventStream();
             }
-            this.streams.push(stream.eventStream);
-            return;
+            this.streams.push(sprite.eventStream);
+            isSprite = true;
+        });
+        if (!isSprite) {
+            this.streams.push(...stream);
         }
-        this.streams.push(...stream);
     }
     
     /**
@@ -1663,7 +1725,6 @@ class EventStream {
     }
 
     /**
-     * @todo needs to be fixed to only give uncompleted events
      * Gets the most recent event task and returns it.
      * @param {boolean} completed wether the task should be marked as completed
      * @returns {*} most recent event task

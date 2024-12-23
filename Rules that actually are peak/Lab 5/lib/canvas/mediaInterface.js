@@ -11,7 +11,7 @@ let mediaInterface = {
                 image.loaded = true;
             })
         },
-        reqeustSamples(samples,image,src) {
+        requestSamples(samples,image,src) {
             this.request(image,src);
             for (const key in samples) {
                 if(samples[key] instanceof Sample){
