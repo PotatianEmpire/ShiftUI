@@ -3,8 +3,23 @@ let lab5App = {
 
         titleScreen: {
             subSprites: {
-                clearCache: {},
+
+                clearCache: {
+                    subSprites: {
+
+                        confirmationBox: {
+                            subSprites: {
+
+                                confirm: {},
+                                cancel: {}
+
+                            }
+                        }
+
+                    }
+                },
                 next: {},
+
             }
         },
 

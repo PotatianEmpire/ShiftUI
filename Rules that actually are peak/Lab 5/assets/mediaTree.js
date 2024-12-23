@@ -57,8 +57,3 @@ let media = {
     audio: {},
     fonts: {}
 }
-
-mediaInterface.images.requestSamples(media.images.testSprite,media.images.testSprite.image,"./assets/images/testSprite.png");
-mediaInterface.images.requestSamples(media.images.highlightedTestSprite,media.images.highlightedTestSprite.image,"./assets/images/testSpriteHighlighted.png");
-mediaInterface.images.requestSamples(media.images.title.backdrop,media.images.title.backdrop.image,"./assets/images/titleTest.png");
-mediaInterface.images.requestSamples(media.images.title.buttons,media.images.title.buttons.image,"./assets/images/titleButtons.png");

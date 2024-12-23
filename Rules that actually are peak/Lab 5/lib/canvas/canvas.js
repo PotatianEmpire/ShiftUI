@@ -1105,21 +1105,21 @@ class ShiftEngine {
     }
 
     main () {
-        canvas.runThreads(lab5);
+        this.canvas.runThreads(this.app);
         // console.log("----- threads completed running -----");
 
-        canvas.runPreProcessors(lab5);
+        this.canvas.runPreProcessors(this.app);
         // console.log("----- completed running preprocessors");
 
-        canvas.prepareRender(lab5);
+        this.canvas.prepareRender(this.app);
         // console.log("----- rendering prepared -----");
 
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        canvas.clear();
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        this.canvas.clear();
         // console.log("----- frame cleared and window size adjusted -----");
 
-        canvas.render(lab5);
+        this.canvas.render(this.app);
         // console.log("----- new frame -----");
     }
 }
@@ -1147,7 +1147,6 @@ class ChainedFunctions {
      * @returns {Boolean} returns true if the chain has completed execution
      */
     callNext () {
-        console.log(this.pointer)
         this.finished = false;
         this.increment();
         let func = this.get();
@@ -1325,7 +1324,11 @@ class Thread {
             }
         })
         if (!isSprite) {
-            branch = [...chain];
+            if (Array.isArray(chain)) {
+                branch = [...chain];
+            } else {
+                branch = [chain];
+            }
         }
         this.tree.push(branch);
     }
@@ -1401,7 +1404,11 @@ class ParticleEmitter {
      * @param {Array<Particle> | Particle} particle particle created
      */
     create (particle) {
-        this.particles.push(...particle);
+        if (Array.isArray(particle)) {
+            this.particles.push(...particle);
+        } else {
+            this.particles.push(particle);
+        }
     }
 
     /**
@@ -1591,13 +1598,13 @@ class FormattedText {
      * @param {String} data string to parse
      */
     parse (data) {
-        this.text.push(...FormattedText.parse(data));
+        this.text.push(...FormattedText.parse(data).text);
     }
 
     /**
      * Parses string into formatted text.
      * @param {String} data string to parse
-     * @returns {FormattedString} parsed string
+     * @returns {FormattedText} parsed text
      */
     static parse (data) {
         let parsedText = new FormattedText ();
@@ -1611,6 +1618,8 @@ class FormattedText {
         return parsedText;
     }
 }
+
+console.log(new FormattedText)
 
 /**
  * Partial sample of a source image.
@@ -1675,7 +1684,11 @@ class EventDistributor {
             isSprite = true;
         });
         if (!isSprite) {
-            this.streams.push(...stream);
+            if (Array.isArray(stream)) {
+                this.streams.push(...stream);
+            } else {
+                this.streams.push(stream);
+            }
         }
     }
     
