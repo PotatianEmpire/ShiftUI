@@ -1,5 +1,3 @@
-function activateMouseNormalMode () {}
-function deactivateMouseNormalMode () {}
 
 function constructMouseNormalMode () {
 
@@ -50,6 +48,7 @@ function constructMouseNormalMode () {
 
     normalMode.addNode(new ChainedFunctions([
         () => {
+            normalMode.toggleOption(["show","subSprites"],"active");
             mouseDown.eventStream.clear();
             mouseUp.eventStream.clear();
         },
@@ -60,7 +59,7 @@ function constructMouseNormalMode () {
             normalMode.thread.push(mouseDown);
         },
         () => {
-            normalMode.node.goto(0);
+            normalMode.node.goto(1);
         }
     ]));
 
@@ -71,16 +70,7 @@ function constructMouseNormalMode () {
 
     normalMode.addSubSprites(lab5App.subSprites.mouse.subSprites.normalMode.subSprites);
 
-    activateMouseNormalMode = function () {
-        normalMode.toggleOption(["show","subSprites","thread"],"active");
-    }
-
-    deactivateMouseNormalMode = function () {
-        normalMode.toggleOption(["show","subSprites","thread"],"inactive");
-        normalMode.node.restart();
-    }
-
-    deactivateMouseNormalMode();
+    normalMode.toggleOption(["show","subSprites","thread"],"inactive");
 
     lab5App.subSprites.mouse.subSprites.normalMode = normalMode;
 }

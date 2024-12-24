@@ -1228,7 +1228,7 @@ class ChainedFunctions {
                 break;
             default:
                 if (typeof loopTo == "number") {
-                    this.pointer = loopTo;
+                    this.pointer = loopTo - 1;
                 }
                 break;
         }
@@ -1285,7 +1285,7 @@ class Thread {
             }
             return true;
         })
-        if (this.tree[this.tree.length - 1] <= 0) {
+        if (this.tree[this.tree.length - 1].length <= 0) {
             this.tree.pop();
         }
         return false;
@@ -1331,6 +1331,103 @@ class Thread {
             }
         }
         this.tree.push(branch);
+    }
+
+    /**
+     * Pushes chain onto thread tree and merges it the previous chain.
+     * @param {ChainedFunctions | Array<ChainedFunctions> | Sprite | SubSprites | Array<Sprite> | null} chain chain to merge
+     */
+    merge (chain) {
+        if (chain) {
+            this.push(chain);
+        }
+        if (this.tree.length >= 2) {
+            let mergedBranch = [...this.tree[this.tree.length - 2],...this.tree[this.tree.length - 1]];
+            this.tree[this.tree.length - 2] = mergedBranch;
+            this.tree[this.tree.length - 1] = [];
+            this.tree = this.tree.filter(branch => branch.length > 0);
+        }
+    }
+    
+    /**
+     * Splits existing chained functions from the thread tree and pushes them on last.
+     * @param {ChainedFunctions | Array<ChainedFunctions> | Sprite | SubSprites | Array<Sprite>} chain chained functions to check for splitting
+     */
+    split (chain) {
+        if (this.tree.length >= 1) {
+            let filter = this.tree[this.tree.length - 1].filter(chainedFunction => {
+                let isSprite = false;
+                let containsChainedFunctions = false;
+                SubSprites.forEach(chain,sprite => {
+                    isSprite = true;
+                    if (sprite.node == chainedFunction) {
+                        containsChainedFunctions = true;
+                    }
+                })
+                if (isSprite) {
+                    return !containsChainedFunctions;
+                }
+                if (Array.isArray(chain)) {
+                    return !chain.some(splitChain => splitChain == chainedFunction);
+                }
+                return chain != chainedFunction;
+            });
+            this.tree[this.tree.length - 1] = filter;
+        }
+        this.push(chain);
+    }
+
+    /**
+     * Hosts sprites with threads.
+     * @param {Sprite | SubSprites | Array<Sprite>} sprite sprites to host
+     * @param {boolean} immidiate wether the sprites should be created immidiately
+     */
+    host (sprite,immidiate = false) {
+        let hostNode = this.createHost(sprite);
+        if (immidiate) {
+            hostNode.callNext();
+        }
+        this.merge(hostNode);
+    }
+
+    /**
+     * Creates a host node.
+     * @param {Sprite | SubSprites | Array<Sprite>} sprite sprites to host
+     * @returns {ChainedFunctions} returns host node
+     */
+    createHost (sprite) {
+        let hostNode = new ChainedFunctions([
+            () => {
+                SubSprites.forEach(hostNode.sprites,sprite => {
+                    if (!sprite.thread) {
+                        return;
+                    }
+                    sprite.toggleOption("thread","active");
+                })
+            },
+            () => {
+                let threadsUnfinished = false;
+                SubSprites.forEach(hostNode.sprites,sprite => {
+                    if (!sprite.thread) {
+                        return;
+                    }
+                    if (!sprite.thread.empty()) {
+                        threadsUnfinished = true;
+                    } else {
+                        sprite.toggleOption("thread","inactive");
+                    }
+                })
+                if (!threadsUnfinished) {
+                    hostNode.restart();
+                    hostNode.return();
+                    return;
+                }
+                hostNode.goto("loop");
+                this.postpone();
+            }
+        ]);
+        hostNode.sprites = sprite;
+        return hostNode;
     }
 
     /**
@@ -1462,7 +1559,7 @@ class SubSprites {
             })
             return;
         }
-        if (typeof sprites == "object") {
+        if (sprites?.constructor === Object || sprites instanceof SubSprites) {
             for (const key in sprites) {
                 if (sprites[key] instanceof Sprite) {
                     callback(sprites[key],key);
@@ -1619,8 +1716,6 @@ class FormattedText {
     }
 }
 
-console.log(new FormattedText)
-
 /**
  * Partial sample of a source image.
  */
@@ -1704,9 +1799,23 @@ class EventDistributor {
 }
 
 /**
+ * Customizeable event with a name and importance value to identify it.
+ */
+class EventTask {
+    name;
+    importance;
+
+    constructor (name = "event", importance = 0) {
+        this.name = name;
+        this.importance = importance;
+    }
+}
+
+/**
  * A collection of event tasks.
  */
 class EventStream {
+    /** @type {Array<EventTask>} */
     stream = [];
 
     /**
@@ -1725,7 +1834,7 @@ class EventStream {
     /**
      * Gets the oldest event task and returns it.
      * @param {boolean} completed wether the task should be marked as completed
-     * @returns {*} oldest event task
+     * @returns {EventTask} oldest event task
      */
     first (completed = true) {
         if (this.empty()) {
@@ -1737,10 +1846,76 @@ class EventStream {
         return this.stream[0];
     }
 
+    /** @typedef {("importance" | "name" | "importanceValue")} EventFilterMode */
+
+    /**
+     * Filters for certain values and returns the most recent event task.
+     * @param {EventFilterMode} mode filter mode
+     * @param {Number | String} value value to filter for
+     * @returns {EventTask | false} most recent event task
+     */
+    only (mode,value) {
+        let filteredStream = [];
+        switch (mode) {
+            case "importance":
+                if (typeof value != "number") {
+                    return false;
+                }
+                let prioritizedEvent = this.prioritize("importance");
+                if (prioritizedEvent.importance < value) {
+                    filteredStream = [];
+                } else {
+                    filteredStream = [prioritizedEvent];
+                }
+                break;
+            case "importanceValue":
+                if (typeof value != "number") {
+                    return false;
+                }
+                filteredStream = this.stream.filter(eventTask => eventTask.importance == value);
+                break;
+            case "name":
+                if (typeof value != "string") {
+                    return false;
+                }
+                filteredStream = this.stream.filter(eventTask => eventTask == value);
+                break;
+        }
+        if (filteredStream.length <= 0) {
+            return false;
+        }
+        return filteredStream[filteredStream.length - 1];
+    }
+
+    /**
+     * Prioritizes a certain value and returns the most recent event task.
+     * @param {(EventFilterMode)} mode priority mode
+     * @param {String} value value to prioritize
+     * @returns {EventTask} most recent prioritized event task
+     */
+    prioritize (mode = "importance",value = "") {
+        let orderedStream = []
+        switch (mode) {
+            case "importance":
+                orderedStream = this.stream.sort((a,b) => a.importance - b.importance);
+                break;
+            case "name":
+                orderedStream = this.only("name",value);
+                if (!orderedStream) {
+                    orderedStream = [];
+                }
+                break;
+        }
+        if (orderedStream.length <= 0) {
+            return false;
+        }
+        return orderedStream[orderedStream.length - 1];
+    }
+
     /**
      * Gets the most recent event task and returns it.
      * @param {boolean} completed wether the task should be marked as completed
-     * @returns {*} most recent event task
+     * @returns {EventTask} most recent event task
      */
     recent (completed = true) {
         if (this.empty()) {
@@ -1754,13 +1929,14 @@ class EventStream {
 
     /**
      * Adds a single event task to the stream.
-     * @param {*} val event added
+     * @param {EventTask} val event added
      */
-    pushEvent (val) {
+    pushEvent (val = new EventTask) {
         this.stream.push(val);
     }
 
     /**
+     * @deprecated last updated: version 1.0
      * Iterates over each event task and call the handler with them in order of insertion.
      * @param {{(eventVal: *): boolean}} handler called on each event task and completes event task unless handler returns true
      */

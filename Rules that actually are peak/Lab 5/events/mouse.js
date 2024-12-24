@@ -1,4 +1,8 @@
+/**
+ * mouse events have an importance value of 5 on default.
+ */
 let mouseEvents = {
+    importance: 5,
     mouseDown: new EventDistributor(),
     mouseUp: new EventDistributor(),
     mousePress: false,
@@ -16,9 +20,7 @@ function constructMouse () {
     mouse.addSubSprites(lab5App.subSprites.mouse.subSprites);
 
     document.addEventListener("mousedown",(ev) => {
-        let event = {
-            name: "mousedown"
-        }
+        let event = new EventTask ("mousedown",mouseEvents.importance);
         if (!mouseEvents.mousePress) {
             mouseEvents.mousePress = true;
             mouseEvents.mouseDown.distribute(event);
@@ -30,9 +32,7 @@ function constructMouse () {
     });
 
     document.addEventListener("mouseup",(ev) => {
-        let event = {
-            name: "mouseup"
-        }
+        let event = new EventTask("mouseup",mouseEvents.importance)
         if (mouseEvents.mousePress) {
             mouseEvents.mousePress = false;
             mouseEvents.mouseUp.distribute(event);
@@ -44,10 +44,8 @@ function constructMouse () {
     });
     
     document.addEventListener("wheel",(ev) => {
-        let event = {
-            name: "scroll",
-            deltaX: ev.deltaY
-        }
+        let event = new EventTask("scroll",mouseEvents.importance);
+        event.deltaY = ev.deltaY;
         mouseEvents.mouseScroll.distribute(event);
     });
     

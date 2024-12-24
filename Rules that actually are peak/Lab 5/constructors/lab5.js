@@ -21,16 +21,20 @@ function constructLab5() {
             if (mediaInterface.images.loadProgress().finished) {
                 return;
             }
-            console.log("loopin'");
             lab5.thread.postpone();
             lab5.node.goto("loop");
         },
         () => {
-            activateMouseNormalMode();
             lab5.thread.push(lab5App.subSprites.titleScreen);
         },
         () => {
-
+            lab5.thread.push(lab5App.subSprites.loadingScreen);
+        },
+        () => {
+            lab5.thread.push(lab5App.subSprites.menu);
+        },
+        () => {
+            lab5.node.goto(1);
         }
     ]));
 

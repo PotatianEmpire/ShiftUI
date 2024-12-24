@@ -13,9 +13,19 @@ function constructClearCacheConfirmation () {
 
     // logic
 
+    confirm.addNode(new ChainedFunctions([
+        () => {
+            confirm.eventStream.clear();
+        }
+    ]))
+
     confirmationBox.addNode(new ChainedFunctions([
         () => {
-            lab5.thread.push([confirm,cancel])
+            lab5.thread.merge([confirm,cancel]);
+        },
+        () => {
+            confirmationBox.node.goto("loop");
+            lab5.thread.postpone();
         }
     ]))
 
