@@ -29,11 +29,45 @@ function constructTitleScreen () {
             console.log("clearCache");
         },
         () => {
+            if (clearCache.onSprite(mouseEvents.position)) {
+                clearCache.node.goto("next");
+                return;
+            }
+
+            //console.log("clearCache idle");
+            
+            lab5.thread.postpone();
+            clearCache.node.goto("loop");
+        },
+        () => {
+            if (!clearCache.onSprite(mouseEvents.position)) {
+                clearCache.node.goto("previous");
+                return;
+            }
+            
+            if (clearCache.eventStream.recent().name == "mousedown") {
+                clearCache.node.goto("next");
+                return;
+            }
+            
+            //console.log("mouse on clearCache");
+            
+            lab5.thread.postpone();
+            clearCache.node.goto("loop");
+        },
+        () => {
+            if (!clearCache.onSprite(mouseEvents.position)) {
+                clearCache.node.goto(1);
+            }
+
             if (clearCache.eventStream.recent().name == "mouseup" &&
                 clearCache.onSprite(mouseEvents.position)) {
                     clearCache.eventDistributor.distribute(new EventTask("block"));
                     lab5.thread.push(lab5App.subSprites.titleScreen.subSprites.clearCache.subSprites.confirmationBox);
             }
+
+            //console.log("mousedown on clearCache")
+
             lab5.thread.postpone();
             clearCache.node.goto("loop");
         }
@@ -43,7 +77,7 @@ function constructTitleScreen () {
         () => {
             
             next.eventStream.clear();
-            console.log("titleScreen Next");
+            //console.log("titleScreen Next");
 
         },
         () => {

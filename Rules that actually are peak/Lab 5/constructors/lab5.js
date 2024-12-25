@@ -16,12 +16,13 @@ function constructLab5() {
             
             mediaInterface.images.requestSamples(media.images.testSprite,media.images.testSprite.image,"./assets/images/testSprite.png");
             mediaInterface.images.requestSamples(media.images.highlightedTestSprite,media.images.highlightedTestSprite.image,"./assets/images/testSpriteHighlighted.png");
+            console.log("loading")
         },
         () => {
             if (mediaInterface.images.loadProgress().finished) {
                 return;
             }
-            lab5.thread.postpone();
+            lab5.node.postpone();
             lab5.node.goto("loop");
         },
         () => {

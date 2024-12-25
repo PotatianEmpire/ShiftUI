@@ -441,6 +441,8 @@ class Canvas {
     height = 0;
     maxDepth = 100;
 
+    frame = 0;
+
     /**
      * @type {CanvasRenderingContext2D}
      */
@@ -458,6 +460,7 @@ class Canvas {
      * Clears the screen and adjusts canvas size.
      */
     clear () {
+        this.frame ++;
         this.context.canvas.height = this.height;
         this.context.canvas.width = this.width;
         this.dimensions.y = 2 * this.height / this.width;
@@ -478,6 +481,7 @@ class Canvas {
         }
         SubSprites.forEach(sprites,sprite => {
             if (sprite.options.thread) {
+                sprite.thread.frame = this.frame;
                 while (!sprite.thread.callNext());
             }
 
@@ -499,6 +503,7 @@ class Canvas {
         SubSprites.forEach(sprites,sprite => {
             if (sprite.options.preProcessor) {
                 sprite.preProcessor.restart();
+                sprite.preProcessor.frame = this.frame;
                 while(!sprite.preProcessor.callNext());
             }
 
@@ -740,21 +745,25 @@ class Canvas {
             }
 
             if (sprite.options.postProcessor) {
+                sprite.preProcessor.frame = this.frame;
                 sprite.preProcessor.restart();
                 while (!sprite.preProcessor.callNext());
             }
 
             if (sprite.options.particleEmitter) {
                 sprite.particleEmitter.emitter.restart();
+                sprite.particleEmitter.emitter.frame = this.frame;
                 while (!sprite.particleEmitter.emitter.callNext());
                 sprite.particleEmitter.particles = sprite.particleEmitter.particles.filter(particle => {
                     if (particle.drawOptions.visible) {
                         this.context.translate(particle.drawOptions.particleDrawPosition.x,particle.drawOptions.particleDrawPosition.y);
                         particle.behaviour.restart();
+                        particle.behaviour.frame = this.frame;
                         while (!particle.behaviour.callNext());
                         this.context.translate(-particle.drawOptions.particleDrawPosition.x,-particle.drawOptions.particleDrawPosition.y);
                     } else {
                         particle.behaviour.restart();
+                        particle.behaviour.frame = this.frame;
                         while (!particle.behaviour.callNext());
                     }
                 });
@@ -853,11 +862,15 @@ class Sprite {
      */
 
     /**
+     * @typedef {Boolean | ("toggle" |
+     *                    "active" |
+     *                    "inactive")} ToggleOptions
+     */
+
+    /**
      * Toggles selected option.
      * @param {Array<SpriteOptions> | SpriteOptions} option one or more sprite options to toggle
-     * @param {Boolean | ("toggle" |
-     *                    "active" |
-     *                    "inactive")} val toggle value
+     * @param {ToggleOptions} val toggle value
      */
     toggleOption (option,val = "toggle") {
         let optionArr;
@@ -1087,6 +1100,7 @@ class ShiftEngine {
     canvas;
     app = new Sprite();
     fps = 60;
+    frame = 0;
 
     /**
      * Creates an application using the Shift engine.
@@ -1121,6 +1135,8 @@ class ShiftEngine {
 
         this.canvas.render(this.app);
         // console.log("----- new frame -----");
+
+        this.frame ++;
     }
 }
 
@@ -1128,11 +1144,49 @@ class ShiftEngine {
  * Collection of functions called in order.
  */
 class ChainedFunctions {
-    functions = []
+    functions = [];
+    timeout = 0;
+    frame = 0;
     pointer = -1;
     finished = false;
     returnVal;
     args;
+    options = {
+        nofunnel: false,
+        noblock: false
+    }
+
+    /**
+     * Toggles chained function options.
+     * @param {("nofunnel" |
+     *          "noblock")} option option to toggle
+     * @param {ToggleOptions} val toggle value
+     */
+    toggleOption (option,val = "toggle") {
+        let optionArr;
+        if (Array.isArray(option)) {
+            optionArr = option;
+        } else {
+            optionArr = [option];
+        }
+        optionArr.forEach(toggleOpt => {
+            if (typeof val == "boolean") {
+                this.options[toggleOpt] = val;
+                return;
+            }
+            switch (val) {
+                case "toggle":
+                    this.options[toggleOpt] = !this.options[toggleOpt];
+                    break;
+                case "active":
+                    this.options[toggleOpt] = true;
+                    break;
+                case "inactive":
+                    this.options[toggleOpt] = false;
+                    break;
+            }
+        })
+    }
 
     /**
      * Constructs an chained functions object.
@@ -1148,16 +1202,19 @@ class ChainedFunctions {
      */
     callNext () {
         this.finished = false;
-        this.increment();
-        let func = this.get();
-        if (!func) {
-            this.finished = true;
+        if (this.timeout > this.frame) {
             return true;
         }
-        this.returnVal = func(this.args);
         if (this.finished) {
             return true;
         }
+        this.increment();
+        let next = this.get();
+        if (!next) {
+            this.finished = true;
+            return true;
+        }
+        next();
         return false;
     }
 
@@ -1166,6 +1223,14 @@ class ChainedFunctions {
      */
     return () {
         this.finished = true;
+    }
+
+    /**
+     * Postpones execution by number of calls.
+     * @param {Number} calls number of calls to postpone by
+     */
+    postpone (calls = 1) {
+        this.timeout = calls + this.frame;
     }
 
     /**
@@ -1198,13 +1263,17 @@ class ChainedFunctions {
     }
 
     /**
+     * @typedef {Number | ("start" |
+     *                     "end" |
+     *                     "last" |
+     *                     "previous" |
+     *                     "loop" |
+     *                     "next")} ChainedFunctionsLoopOptions
+     */
+
+    /**
      * Goes to specified location.
-     * @param {Number | ("start" |
-     *                   "end" |
-     *                   "last" |
-     *                   "previous" |
-     *                   "loop" |
-     *                   "next")} loopTo position the pointer should jump to
+     * @param {ChainedFunctionsLoopOptions} loopTo position the pointer should jump to
      */
     goto (loopTo = 0) {
         switch (loopTo) {
@@ -1256,6 +1325,7 @@ class ChainedFunctions {
 class Thread {
     tree = [];
     timeout = 0;
+    frame = 0;
 
     /**
      * Creates a thread object.
@@ -1270,23 +1340,31 @@ class Thread {
      * @returns {Boolean} wether the chained function could be called
      */
     callNext () {
-        if (this.timeout > 0) {
-            this.timeout--;
+        if (this.timeout > this.frame) {
             return true;
         }
-        let chain = this.get();
-        if (!chain) {
+        let next = this.get();
+        if (!next) {
             return true;
         }
-        this.tree[this.tree.length - 1] = chain.filter(chainedFunctions => {
+        let postpone = false;
+        let blocked = false;
+        this.tree[this.tree.length - 1] = [];
+        this.tree[this.tree.length - 1].push(...next.filter(chainedFunctions => {
+            chainedFunctions.frame = this.frame;
             chainedFunctions.callNext();
-            if (chainedFunctions.finished) {
-                return false;
+            if (chainedFunctions.timeout > chainedFunctions.frame) {
+                postpone = true;
+            } else if (!chainedFunctions.options.noblock) {
+                blocked = true;
             }
-            return true;
-        })
+            return !chainedFunctions.finished;
+        }));
         if (this.tree[this.tree.length - 1].length <= 0) {
             this.tree.pop();
+        }
+        if (postpone && !blocked) {
+            this.postpone();
         }
         return false;
     }
@@ -1343,7 +1421,7 @@ class Thread {
         }
         if (this.tree.length >= 2) {
             let mergedBranch = [...this.tree[this.tree.length - 2],...this.tree[this.tree.length - 1]];
-            this.tree[this.tree.length - 2] = mergedBranch;
+            this.tree[this.tree.length - 2] = mergedBranch
             this.tree[this.tree.length - 1] = [];
             this.tree = this.tree.filter(branch => branch.length > 0);
         }
@@ -1360,7 +1438,7 @@ class Thread {
                 let containsChainedFunctions = false;
                 SubSprites.forEach(chain,sprite => {
                     isSprite = true;
-                    if (sprite.node == chainedFunction) {
+                    if (sprite.node === chainedFunction) {
                         containsChainedFunctions = true;
                     }
                 })
@@ -1368,9 +1446,9 @@ class Thread {
                     return !containsChainedFunctions;
                 }
                 if (Array.isArray(chain)) {
-                    return !chain.some(splitChain => splitChain == chainedFunction);
+                    return !chain.some(splitChain => splitChain === chainedFunction);
                 }
-                return chain != chainedFunction;
+                return chain !== chainedFunction;
             });
             this.tree[this.tree.length - 1] = filter;
         }
@@ -1435,7 +1513,31 @@ class Thread {
      * @param {Number} calls number of callNext function call the execution should be postponed by
      */
     postpone (calls = 1) {
-        this.timeout = calls;
+        this.timeout = calls + this.frame;
+    }
+
+    /**
+     * 
+     * @param {Sprite | ChainedFunctions} sprite sprite or chainedFunctions to funnel
+     * @param {ChainedFunctionsLoopOptions} location location to funnel to
+     * @param {EventStream} eventStream event stream for funnel activation
+     */
+    createEventFunnel (sprite,location,eventStream) {
+        let chainedFunctions;
+        if (sprite instanceof Sprite) {
+            chainedFunctions = sprite.node;
+        }
+        chainedFunctions = sprite;
+        let funnel = new ChainedFunctions([
+            () => {
+                if (chainedFunctions.options.nofunnel) {
+                    funnel.goto("loop");
+                    this.postpone();
+                    return;
+                }
+            }
+        ]);
+        funnel.eventStream = eventStream;
     }
 }
 
@@ -1537,6 +1639,10 @@ class SubSprites {
     forEach (callback) {
         SubSprites.forEach(this,callback);
     }
+
+    /**
+     * @typedef {Array<Sprite> | SubSprites | Sprite} SpriteCollection
+     */
 
     /**
      * Calls the callback for each sprite in the Array or subSprites object.
@@ -1768,8 +1874,9 @@ class EventDistributor {
     /**
      * Adds a stream to the distribution network.
      * @param {EventStream | Array<EventStream> | Sprite | Array<Sprite> | SubSprites} stream stream to add
+     * @returns {EventStream} returns added stream
      */
-    addStream (stream) {
+    addStream (stream = new EventStream()) {
         let isSprite = false;
         SubSprites.forEach(stream,sprite => {
             if (!sprite.options.eventStream) {
@@ -1785,6 +1892,7 @@ class EventDistributor {
                 this.streams.push(stream);
             }
         }
+        return this.streams[this.streams.length - 1];
     }
     
     /**

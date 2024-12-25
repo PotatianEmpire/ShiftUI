@@ -14,8 +14,16 @@ function init () {
     constructLab5();
     
     app = new ShiftEngine("view",lab5);
+    app.fps = 60
 }
 
 
 init ();
 app.start();
+
+setInterval(() => {
+    console.log(`rendered ${app.frame} frames in 1 seconds
+which is ${app.frame / 1} frames per second.
+target of ${app.fps}`);
+    app.frame = 0;
+},1000)

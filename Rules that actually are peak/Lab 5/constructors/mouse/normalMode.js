@@ -25,7 +25,7 @@ function constructMouseNormalMode () {
                 mouseUp.node.return();
                 return;
             }
-            normalMode.thread.postpone();
+            mouseUp.node.postpone();
             mouseUp.node.goto("loop");
         }
     ]));
@@ -41,7 +41,7 @@ function constructMouseNormalMode () {
                 mouseDown.node.return();
                 return;
             }
-            normalMode.thread.postpone();
+            mouseDown.node.postpone();
             mouseDown.node.goto("loop");
         }
     ]));
