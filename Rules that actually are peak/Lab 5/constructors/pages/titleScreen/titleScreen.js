@@ -29,10 +29,10 @@ function constructTitleScreen () {
             console.log("clearCache");
         },
         () => {
-            if (clearCache.eventStream.recent() &&
+            if (clearCache.eventStream.recent().name == "mouseup" &&
                 clearCache.onSprite(mouseEvents.position)) {
                     clearCache.eventDistributor.distribute(new EventTask("block"));
-                    //lab5.thread.push(lab5App.subSprites.titleScreen.subSprites.clearCache.subSprites.confirmationBox);
+                    lab5.thread.push(lab5App.subSprites.titleScreen.subSprites.clearCache.subSprites.confirmationBox);
             }
             lab5.thread.postpone();
             clearCache.node.goto("loop");
@@ -41,23 +41,30 @@ function constructTitleScreen () {
 
     next.addNode(new ChainedFunctions([
         () => {
+            
             next.eventStream.clear();
             console.log("titleScreen Next");
+
         },
         () => {
-            let recentEvent = next.eventStream.recent();
+
+            let recentEvent = next.eventStream.prioritize("name","block");
+            
             if (recentEvent.name == "block") {
                 next.eventStream.clear();
                 next.node.goto("loop");
                 return;
             }
+
             if (recentEvent) {
                 next.eventDistributor.distribute(new EventTask("next"));
                 next.node.goto("next");
                 return;
             }
+
             lab5.thread.postpone();
             next.node.goto("loop");
+
         },
         () => {
             console.log("next")

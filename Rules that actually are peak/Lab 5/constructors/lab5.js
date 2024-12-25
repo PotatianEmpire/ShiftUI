@@ -34,7 +34,7 @@ function constructLab5() {
             lab5.thread.push(lab5App.subSprites.menu);
         },
         () => {
-            lab5.node.goto(1);
+            lab5.node.goto(2);
         }
     ]));
 

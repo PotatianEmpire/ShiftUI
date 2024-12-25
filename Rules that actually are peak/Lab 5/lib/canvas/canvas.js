@@ -1852,9 +1852,10 @@ class EventStream {
      * Filters for certain values and returns the most recent event task.
      * @param {EventFilterMode} mode filter mode
      * @param {Number | String} value value to filter for
+     * @param {boolean} completed wether the task should be marked as completed
      * @returns {EventTask | false} most recent event task
      */
-    only (mode,value) {
+    only (mode,value,completed = true) {
         let filteredStream = [];
         switch (mode) {
             case "importance":
@@ -1863,53 +1864,77 @@ class EventStream {
                 }
                 let prioritizedEvent = this.prioritize("importance");
                 if (prioritizedEvent.importance < value) {
-                    filteredStream = [];
+                    return false;
                 } else {
-                    filteredStream = [prioritizedEvent];
+                    return prioritizedEvent;
                 }
                 break;
             case "importanceValue":
                 if (typeof value != "number") {
                     return false;
                 }
-                filteredStream = this.stream.filter(eventTask => eventTask.importance == value);
+                this.stream.forEach((eventTask,i) => {
+                    if (eventTask.importance == value) {
+                        filteredStream.push(i);
+                    }
+                })
                 break;
             case "name":
                 if (typeof value != "string") {
                     return false;
                 }
-                filteredStream = this.stream.filter(eventTask => eventTask == value);
+                this.stream.forEach((eventTask,i) => {
+                    if (eventTask.name == value) {
+                        filteredStream.push(i);
+                    }
+                })
                 break;
         }
         if (filteredStream.length <= 0) {
             return false;
         }
-        return filteredStream[filteredStream.length - 1];
+        let eventTaskId = filteredStream[filteredStream.length - 1]
+        if (completed) {
+            return this.stream.splice(eventTaskId,1)[0];
+        }
+        return this.stream[eventTaskId];
     }
 
     /**
      * Prioritizes a certain value and returns the most recent event task.
      * @param {(EventFilterMode)} mode priority mode
      * @param {String} value value to prioritize
+     * @param {boolean} completed wether the task should be marked as completed
      * @returns {EventTask} most recent prioritized event task
      */
-    prioritize (mode = "importance",value = "") {
+    prioritize (mode = "importance",value = "",completed = true) {
         let orderedStream = []
         switch (mode) {
             case "importance":
-                orderedStream = this.stream.sort((a,b) => a.importance - b.importance);
+                orderedStream = this.stream.map((value,i) => {return {importance: value.importance,i: i}})
+                orderedStream = orderedStream.sort((a,b) => a.importance - b.importance);
                 break;
             case "name":
                 orderedStream = this.only("name",value);
                 if (!orderedStream) {
-                    orderedStream = [];
+                    if (this.stream.length > 0) {
+                        orderedStream = [{i: this.stream.length - 1}];
+                    } else {
+                        orderedStream = [];
+                    }
+                } else {
+                    return orderedStream;
                 }
                 break;
         }
         if (orderedStream.length <= 0) {
             return false;
         }
-        return orderedStream[orderedStream.length - 1];
+        let eventTaskId = orderedStream[orderedStream.length - 1].i;
+        if (completed) {
+            return this.stream.splice(eventTaskId,1)[0];
+        }
+        return this.stream[eventTaskId];
     }
 
     /**
