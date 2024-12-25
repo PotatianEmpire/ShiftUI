@@ -1421,7 +1421,7 @@ class Thread {
         }
         if (this.tree.length >= 2) {
             let mergedBranch = [...this.tree[this.tree.length - 2],...this.tree[this.tree.length - 1]];
-            this.tree[this.tree.length - 2] = mergedBranch
+            this.tree[this.tree.length - 2] = mergedBranch;
             this.tree[this.tree.length - 1] = [];
             this.tree = this.tree.filter(branch => branch.length > 0);
         }
