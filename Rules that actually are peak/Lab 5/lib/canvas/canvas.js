@@ -1304,6 +1304,16 @@ class ChainedFunctions {
     }
 
     /**
+     * Goes to specified location and postpones execution.
+     * @param {ChainedFunctionsLoopOptions} loopTo location to loop to
+     * @param {Number} calls number of calls to postpone by
+     */
+    postponedGoto (loopTo = 0, calls = 1) {
+        this.goto(loopTo);
+        this.postpone(calls);
+    }
+
+    /**
      * Adds function to the chain.
      * @param {{(*): *}} func function to be added
      */
@@ -1349,8 +1359,7 @@ class Thread {
         }
         let postpone = false;
         let blocked = false;
-        this.tree[this.tree.length - 1] = [];
-        this.tree[this.tree.length - 1].push(...next.filter(chainedFunctions => {
+        this.tree[this.tree.length - 1] = next.filter(chainedFunctions => {
             chainedFunctions.frame = this.frame;
             chainedFunctions.callNext();
             if (chainedFunctions.timeout > chainedFunctions.frame) {
@@ -1359,7 +1368,7 @@ class Thread {
                 blocked = true;
             }
             return !chainedFunctions.finished;
-        }));
+        });
         if (this.tree[this.tree.length - 1].length <= 0) {
             this.tree.pop();
         }
@@ -1456,12 +1465,20 @@ class Thread {
     }
 
     /**
+     * Postpones the execution of the callNext function.
+     * @param {Number} calls number of callNext function call the execution should be postponed by
+     */
+    postpone (calls = 1) {
+        this.timeout = calls + this.frame;
+    }
+
+    /**
      * Hosts sprites with threads.
      * @param {Sprite | SubSprites | Array<Sprite>} sprite sprites to host
      * @param {boolean} immidiate wether the sprites should be created immidiately
      */
-    host (sprite,immidiate = false) {
-        let hostNode = this.createHost(sprite);
+    mergeHost (sprite,immidiate = false) {
+        let hostNode = Thread.createHost(sprite);
         if (immidiate) {
             hostNode.callNext();
         }
@@ -1473,7 +1490,7 @@ class Thread {
      * @param {Sprite | SubSprites | Array<Sprite>} sprite sprites to host
      * @returns {ChainedFunctions} returns host node
      */
-    createHost (sprite) {
+    static createHost (sprite) {
         let hostNode = new ChainedFunctions([
             () => {
                 SubSprites.forEach(hostNode.sprites,sprite => {
@@ -1500,44 +1517,65 @@ class Thread {
                     hostNode.return();
                     return;
                 }
+                hostNode.postpone();
                 hostNode.goto("loop");
-                this.postpone();
             }
         ]);
         hostNode.sprites = sprite;
+        hostNode.toggleOption("noblock","active");
         return hostNode;
     }
 
     /**
-     * Postpones the execution of the callNext function.
-     * @param {Number} calls number of callNext function call the execution should be postponed by
+     * When activated the funnel funnels the pointer to the given location.
+     * @param {Sprite | ChainedFunctions} target sprite or chainedFunctions to funnel
+     * @param {ChainedFunctionsLoopOptions} location location to funnel to
+     * @param {EventStream} eventStream event stream for funnel activation
+     * @param {(eventStream: EventStream) => boolean} eventHandler optional event stream handler
+     * @returns {ChainedFunctions} returns funnel node
      */
-    postpone (calls = 1) {
-        this.timeout = calls + this.frame;
+    mergeFunnel (target,location,eventStream,
+                eventHandler = (eventStream) => eventStream.recent() ? true : false) {
+        this.merge(Thread.createFunnel(target,location,eventStream,eventHandler));
     }
 
     /**
-     * 
-     * @param {Sprite | ChainedFunctions} sprite sprite or chainedFunctions to funnel
+     * When activated the funnel funnels the pointer to the given location.
+     * @param {Sprite | ChainedFunctions} target sprite or chainedFunctions to funnel
      * @param {ChainedFunctionsLoopOptions} location location to funnel to
      * @param {EventStream} eventStream event stream for funnel activation
+     * @param {(eventStream: EventStream) => boolean} eventHandler optional event stream handler
+     * @returns {ChainedFunctions} returns funnel node
      */
-    createEventFunnel (sprite,location,eventStream) {
+    static createFunnel (target,location = "end",eventStream = new EventStream(),
+                       eventHandler = (eventStream) => eventStream.recent() ? true : false) {
         let chainedFunctions;
-        if (sprite instanceof Sprite) {
-            chainedFunctions = sprite.node;
+        if (target instanceof Sprite) {
+            chainedFunctions = target.node;
+        } else {
+            chainedFunctions = target;
         }
-        chainedFunctions = sprite;
         let funnel = new ChainedFunctions([
             () => {
-                if (chainedFunctions.options.nofunnel) {
-                    funnel.goto("loop");
-                    this.postpone();
+                if (funnel.target.options.nofunnel) {
                     return;
                 }
+                if (eventHandler(funnel.eventStream)) {
+                    funnel.target.goto(funnel.location);
+                }
+                if (funnel.target.finished) {
+                    funnel.return();
+                }
+            },
+            () => {
+                funnel.goto("start");
+                funnel.postpone();
             }
         ]);
         funnel.eventStream = eventStream;
+        funnel.target = chainedFunctions;
+        funnel.location = location;
+        return funnel;
     }
 }
 

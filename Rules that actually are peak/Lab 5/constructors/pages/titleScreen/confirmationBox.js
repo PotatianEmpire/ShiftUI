@@ -25,10 +25,7 @@ function constructClearCacheConfirmation () {
             console.log("confirm");
         },
         () => {
-            
-
-            confirm.node.goto("loop");
-            lab5.thread.postpone();
+            confirm.node.postponedGoto("loop");
         }
     ]))
 
@@ -39,7 +36,7 @@ function constructClearCacheConfirmation () {
         },
         () => {
             cancel.node.goto("loop");
-            lab5.thread.postpone();
+            cancel.node.postpone();
         }
     ]))
 
@@ -50,7 +47,7 @@ function constructClearCacheConfirmation () {
         },
         () => {
             confirmationBox.node.goto("loop");
-            lab5.thread.postpone();
+            confirmationBox.node.postpone();
         }
     ]))
 

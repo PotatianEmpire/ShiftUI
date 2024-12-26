@@ -34,44 +34,37 @@ function constructTitleScreen () {
                 return;
             }
 
-            //console.log("clearCache idle");
+            console.log("clearCache idle");
             
-            lab5.thread.postpone();
+            clearCache.node.postpone();
             clearCache.node.goto("loop");
         },
         () => {
-            if (!clearCache.onSprite(mouseEvents.position)) {
-                clearCache.node.goto("previous");
-                return;
-            }
-            
             if (clearCache.eventStream.recent().name == "mousedown") {
                 clearCache.node.goto("next");
                 return;
             }
             
-            //console.log("mouse on clearCache");
+            console.log("mouse on clearCache");
             
-            lab5.thread.postpone();
+            clearCache.node.postpone();
             clearCache.node.goto("loop");
         },
         () => {
-            if (!clearCache.onSprite(mouseEvents.position)) {
-                clearCache.node.goto(1);
-            }
-
-            if (clearCache.eventStream.recent().name == "mouseup" &&
-                clearCache.onSprite(mouseEvents.position)) {
+            if (clearCache.eventStream.recent().name == "mouseup") {
                     clearCache.eventDistributor.distribute(new EventTask("block"));
                     lab5.thread.push(lab5App.subSprites.titleScreen.subSprites.clearCache.subSprites.confirmationBox);
             }
 
-            //console.log("mousedown on clearCache")
+            console.log("mousedown on clearCache")
 
-            lab5.thread.postpone();
+            clearCache.node.postpone();
             clearCache.node.goto("loop");
         }
     ]))
+
+    let clearCacheFunnel = Thread.createFunnel(clearCache,1,new EventStream(),
+    (event) => !clearCache.onSprite(mouseEvents.position));
 
     next.addNode(new ChainedFunctions([
         () => {
@@ -96,7 +89,7 @@ function constructTitleScreen () {
                 return;
             }
 
-            lab5.thread.postpone();
+            next.node.postpone();
             next.node.goto("loop");
 
         },
@@ -107,7 +100,8 @@ function constructTitleScreen () {
 
     titleScreen.addNode(new ChainedFunctions([
         () => {
-            lab5.thread.host(lab5App.subSprites.mouse.subSprites.normalMode);
+            lab5.thread.mergeHost(lab5App.subSprites.mouse.subSprites.normalMode);
+            lab5.thread.merge(clearCacheFunnel);
             lab5.thread.merge([clearCache,next]);
         }
     ]))
