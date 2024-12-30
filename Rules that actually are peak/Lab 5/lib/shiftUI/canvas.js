@@ -1153,13 +1153,15 @@ class ChainedFunctions {
     args;
     options = {
         nofunnel: false,
-        noblock: false
+        noblock: false,
+        paused: false
     }
 
     /**
      * Toggles chained function options.
      * @param {("nofunnel" |
-     *          "noblock")} option option to toggle
+     *          "noblock" |
+     *          "paused")} option option to toggle
      * @param {ToggleOptions} val toggle value
      */
     toggleOption (option,val = "toggle") {
@@ -1190,7 +1192,7 @@ class ChainedFunctions {
 
     /**
      * Constructs an chained functions object.
-     * @param {Array<{(*): *}>} functions array of chained functions
+     * @param {Array<{(*): *} | ChainedFunctions>} functions array of chained functions and/or functions
      */
     constructor (functions = []) {
         this.functions = functions;
@@ -1202,6 +1204,9 @@ class ChainedFunctions {
      */
     callNext () {
         this.finished = false;
+        if (this.options.paused) {
+            this.postpone();
+        }
         if (this.timeout > this.frame) {
             return true;
         }
@@ -1214,7 +1219,18 @@ class ChainedFunctions {
             this.finished = true;
             return true;
         }
-        next();
+        if (next instanceof ChainedFunctions) {
+            next.frame = this.frame;
+            let pastPointer = this.pointer;
+            next.callNext();
+            if (!next.finished && pastPointer == this.pointer) {
+                this.goto("loop");
+            }
+            this.timeout = next.timeout;
+            return false;
+        } else {
+            next();
+        }
         return false;
     }
 
@@ -1235,7 +1251,7 @@ class ChainedFunctions {
 
     /**
      * Get the current function.
-     * @returns {{(*): *} | false} returns the current function
+     * @returns {{(*): *} | ChainedFunctions | false} returns the current function
      */
     get () {
         if (this.pointer < 0) {
@@ -1315,9 +1331,13 @@ class ChainedFunctions {
 
     /**
      * Adds function to the chain.
-     * @param {{(*): *}} func function to be added
+     * @param {{(*): *}|Array<{(*): *}>|ChainedFunctions|Array<ChainedFunctions>} func function to be added
      */
     add (func) {
+        if (Array.isArray(func)) {
+            this.functions.push(...func);
+            return;
+        }
         this.functions.push(func);
     }
 
@@ -1522,7 +1542,6 @@ class Thread {
             }
         ]);
         hostNode.sprites = sprite;
-        hostNode.toggleOption("noblock","active");
         return hostNode;
     }
 
@@ -1557,6 +1576,9 @@ class Thread {
         }
         let funnel = new ChainedFunctions([
             () => {
+                if (funnel.options.nofunnel) {
+                    return;
+                }
                 if (funnel.target.options.nofunnel) {
                     return;
                 }
@@ -1942,6 +1964,14 @@ class EventDistributor {
             stream.pushEvent(ev);
         })
     }
+
+    clearAll () {
+        this.streams.forEach(stream => {
+            if (!stream.options.noExternalClear) {
+                stream.clear();
+            }
+        })
+    }
 }
 
 /**
@@ -1963,6 +1993,45 @@ class EventTask {
 class EventStream {
     /** @type {Array<EventTask>} */
     stream = [];
+
+    options = {
+        noExternalClear: false
+    }
+
+    /**
+     * @typedef {("noExternalClear")} EventStreamOptions
+     */
+
+    /**
+     * Toggles selected option.
+     * @param {Array<EventStreamOptions> | EventStreamOptions} option one or more event stream options to toggle
+     * @param {ToggleOptions} val toggle value
+     */
+    toggleOption (option,val = "toggle") {
+        let optionArr;
+        if (Array.isArray(option)) {
+            optionArr = option;
+        } else {
+            optionArr = [option];
+        }
+        optionArr.forEach(toggleOpt => {
+            if (typeof val == "boolean") {
+                this.options[toggleOpt] = val;
+                return;
+            }
+            switch (val) {
+                case "toggle":
+                    this.options[toggleOpt] = !this.options[toggleOpt];
+                    break;
+                case "active":
+                    this.options[toggleOpt] = true;
+                    break;
+                case "inactive":
+                    this.options[toggleOpt] = false;
+                    break;
+            }
+        })
+    }
 
     /**
      * Creates an event stream object.

@@ -13,7 +13,7 @@ function constructTitleScreen () {
     clearCache.addEventDistributor();
     next.addEventDistributor();
 
-    mouseEvents.mouseDown.addStream(clearCache);
+    mouseEvents.mouseDown.addStream([clearCache,next]);
     mouseEvents.mouseUp.addStream([clearCache,next]);
 
     keyboardEvents.keyDown.addStream(next);
@@ -23,83 +23,107 @@ function constructTitleScreen () {
 
     // logic
 
+    let clearCacheFunnel = new ChainedFunctions();
+
     clearCache.addNode(new ChainedFunctions([
         () => {
             clearCache.eventStream.clear();
             console.log("clearCache");
         },
         () => {
+            clearCacheFunnel.toggleOption("paused");
+            console.log("clearCache idle");
+        },
+        () => {
             if (clearCache.onSprite(mouseEvents.position)) {
+                console.log("mouse on clearCache");
+
+                clearCacheFunnel.toggleOption("paused");
                 clearCache.node.goto("next");
                 return;
             }
-
-            console.log("clearCache idle");
             
             clearCache.node.postpone();
             clearCache.node.goto("loop");
         },
         () => {
             if (clearCache.eventStream.recent().name == "mousedown") {
+                clearCache.eventDistributor.distribute(new EventTask("block"));
+
+                console.log("mousedown on clearCache");
+                
                 clearCache.node.goto("next");
                 return;
             }
             
-            console.log("mouse on clearCache");
             
             clearCache.node.postpone();
             clearCache.node.goto("loop");
         },
         () => {
             if (clearCache.eventStream.recent().name == "mouseup") {
-                    clearCache.eventDistributor.distribute(new EventTask("block"));
-                    lab5.thread.push(lab5App.subSprites.titleScreen.subSprites.clearCache.subSprites.confirmationBox);
+                lab5.thread.push(lab5App.subSprites.titleScreen.subSprites.clearCache.subSprites.confirmationBox);
             }
-
-            console.log("mousedown on clearCache")
 
             clearCache.node.postpone();
             clearCache.node.goto("loop");
         }
     ]))
 
-    let clearCacheFunnel = Thread.createFunnel(clearCache,1,new EventStream(),
+    clearCacheFunnel = Thread.createFunnel(clearCache,1,new EventStream(),
     (event) => !clearCache.onSprite(mouseEvents.position));
 
     next.addNode(new ChainedFunctions([
         () => {
             
             next.eventStream.clear();
-            //console.log("titleScreen Next");
+            console.log("titleScreen Next");
 
         },
         () => {
-
             let recentEvent = next.eventStream.prioritize("name","block");
-            
+
             if (recentEvent.name == "block") {
                 next.eventStream.clear();
                 next.node.goto("loop");
                 return;
             }
 
-            if (recentEvent) {
+            if (recentEvent.name == "keydown" || recentEvent.name == "mousedown") {
+                console.log("next mousedown")
+
+                next.node.goto("next");
+                return;
+            }
+
+            next.node.postponedGoto("loop");
+        },
+        () => {
+            let recentEvent = next.eventStream.recent();
+
+            if (recentEvent.name == "mouseup" || recentEvent.name == "keyup") {
                 next.eventDistributor.distribute(new EventTask("next"));
                 next.node.goto("next");
                 return;
             }
 
-            next.node.postpone();
-            next.node.goto("loop");
+            if (!next.eventStream.empty()) {
+                next.node.goto("next");
+                return;
+            }
 
+            next.node.postponedGoto("loop");
         },
         () => {
-            console.log("next")
+            console.log("next");
         }
     ]))
 
     titleScreen.addNode(new ChainedFunctions([
         () => {
+            console.log("----|----")
+            console.log("titleScreen");
+
             lab5.thread.mergeHost(lab5App.subSprites.mouse.subSprites.normalMode);
             lab5.thread.merge(clearCacheFunnel);
             lab5.thread.merge([clearCache,next]);

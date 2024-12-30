@@ -25,7 +25,7 @@ let createButton = (sprite,onHover,onClick,def) => {
 }
 
 /**
- * 
+ * @deprecated
  * @param {{(val: *,id: Number) : void}} callback 
  */
 Array.prototype.reverseForEach = function (callback) {
