@@ -1,5 +1,8 @@
+[<h4>Back</h4>](./README.md)
 # ShiftUI
 ShiftUI is a collection of small libraries to create simple lightweight javascript applications.
+## Creating a repository
+You can either clone this repository and start creating all files or download the lib folder and move it into your project repository.
 ## Setup
 ShiftUI will first need to be imported into the html document:
 ```html
