@@ -1,1 +1,0 @@
-2 Toiletten, 2 Duschen.

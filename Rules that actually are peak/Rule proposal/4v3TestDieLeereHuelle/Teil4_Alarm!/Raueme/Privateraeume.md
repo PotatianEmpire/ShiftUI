@@ -1,1 +1,0 @@
-Putz_und_Ordnungssystem (Beim benutzen der Schluesselkarte): "Ding. Ding. Neue Person registriert und zugeordnet."

@@ -1,7 +1,0 @@
-1. [Rules]()
-    - [Cards and Skill](./Rules4v3/Cards_and_Skills.md)
-    - [Time and Tempo](./Rules4v3/Time_and_Tempo.md)
-    - [Positioning and Propability](./Rules4v3/Positioning_and_Propability.md)
-    - [New Mechanic](./Rules4v3/Time_and_Tempo.md)
-2. [Example Cards]()
-3. [Security Breach]()
