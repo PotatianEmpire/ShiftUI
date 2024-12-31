@@ -6,6 +6,9 @@ function constructMouseNormalMode () {
     let mouseUp = new Sprite ();
     let mouseDown = new Sprite ();
 
+    mouseUp.dimensions = mouseUp.dimensions.unscale(2);
+    mouseDown.dimensions = mouseDown.dimensions.unscale(2);
+
     mouseUp.addSample(media.images.testSprite.arrow);
     mouseDown.addSample(media.images.highlightedTestSprite.arrow);
 

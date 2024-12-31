@@ -983,7 +983,7 @@ class Sprite {
      * Makes this sprite a thread execution node.
      * @param {ChainedFunctions} node node that can be pushed onto the thread tree.
      */
-    addNode (node) {
+    addNode (node = new ChainedFunctions()) {
         this.node = node;
         this.toggleOption("node","active");
     }
@@ -1195,7 +1195,12 @@ class ChainedFunctions {
      * @param {Array<{(*): *} | ChainedFunctions>} functions array of chained functions and/or functions
      */
     constructor (functions = []) {
-        this.functions = functions;
+        this.functions = functions.map(func => {
+            if (typeof func == "function" || func instanceof ChainedFunctions) {
+                return func;
+            }
+            return () => {};
+        });
     }
 
     /**
@@ -1284,7 +1289,9 @@ class ChainedFunctions {
      *                     "last" |
      *                     "previous" |
      *                     "loop" |
-     *                     "next")} ChainedFunctionsLoopOptions
+     *                     "next" |
+     *                     "second" |
+     *                     "secondLast")} ChainedFunctionsLoopOptions
      */
 
     /**
@@ -1300,7 +1307,7 @@ class ChainedFunctions {
                 this.pointer = this.functions.length;
                 break;
             case "last":
-                this.pointer = this.functions.length - 1;
+                this.pointer = this.functions.length - 2;
                 break;
             case "previous":
                 this.pointer-= 2;
@@ -1310,6 +1317,12 @@ class ChainedFunctions {
                 break;
             case "next":
                 this.pointer = this.pointer;
+                break;
+            case "second":
+                this.pointer = 1;
+                break;
+            case "secondLast":
+                this.pointer = this.functions.length - 3;
                 break;
             default:
                 if (typeof loopTo == "number") {
@@ -1330,6 +1343,23 @@ class ChainedFunctions {
     }
 
     /**
+     * Idles chained function.
+     * @param {Function} activator optionally wait for a specific event
+     */
+    wait (activator = () => false) {
+        if (activator()) {
+            this.goto("next");
+            return;
+        }
+        this.goto("loop");
+        this.postpone(1);
+    }
+    
+    /**
+     * @typedef {Function | ChainedFunctions} ExpandedFunctionTypes
+     */
+
+    /**
      * Adds function to the chain.
      * @param {{(*): *}|Array<{(*): *}>|ChainedFunctions|Array<ChainedFunctions>} func function to be added
      */
@@ -1346,6 +1376,15 @@ class ChainedFunctions {
      */
     restart () {
         this.pointer = -1;
+    }
+
+    restartAll () {
+        this.functions.forEach(f => {
+            if (f instanceof ChainedFunctions) {
+                f.restartAll();
+            }
+        })
+        this.restart();
     }
 }
 
@@ -1493,6 +1532,27 @@ class Thread {
     }
 
     /**
+     * Moves chainedFunctions to target thread.
+     * @param {ChainedFunctions | Array<ChainedFunctions> | Sprite | SubSprites | Array<Sprite> | "all"} chain chainedFunctions to move
+     * @param {Thread | Sprite} target where to move the split chainedFunctions to
+     */
+    move (chain,target) {
+        if (this.empty()) {
+            return;
+        }
+        if (chain != "all") {
+            this.split(chain);
+        }
+        if (target instanceof Thread) {
+            target.merge(this.tree.pop());
+            return;
+        }
+        if (target instanceof Sprite) {
+            target.thread.merge(this.tree.pop());
+        }
+    }
+
+    /**
      * Hosts sprites with threads.
      * @param {Sprite | SubSprites | Array<Sprite>} sprite sprites to host
      * @param {boolean} immidiate wether the sprites should be created immidiately
@@ -1576,6 +1636,11 @@ class Thread {
         }
         let funnel = new ChainedFunctions([
             () => {
+                if (funnel.eventStream) {
+                    funnel.eventStream.clear();
+                }
+            },
+            () => {
                 if (funnel.options.nofunnel) {
                     return;
                 }
@@ -1586,11 +1651,12 @@ class Thread {
                     funnel.target.goto(funnel.location);
                 }
                 if (funnel.target.finished) {
+                    funnel.restart();
                     funnel.return();
                 }
             },
             () => {
-                funnel.goto("start");
+                funnel.goto(1);
                 funnel.postpone();
             }
         ]);

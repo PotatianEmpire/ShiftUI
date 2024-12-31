@@ -14,7 +14,7 @@ function init () {
     constructLab5();
     
     app = new ShiftEngine("view",lab5);
-    app.fps = 250
+    app.fps = 1
 }
 
 

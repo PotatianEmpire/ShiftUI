@@ -17,6 +17,7 @@ function constructTitleScreen () {
     mouseEvents.mouseUp.addStream([clearCache,next]);
 
     keyboardEvents.keyDown.addStream(next);
+    keyboardEvents.keyUp.addStream(next);
     clearCache.eventDistributor.addStream(next);
 
     next.eventDistributor.addStream(clearCache);
@@ -28,15 +29,15 @@ function constructTitleScreen () {
     clearCache.addNode(new ChainedFunctions([
         () => {
             clearCache.eventStream.clear();
-            console.log("clearCache");
+            console.log("---$ clearCache");
         },
         () => {
             clearCacheFunnel.toggleOption("paused");
-            console.log("clearCache idle");
+            console.log("> clearCache idle");
         },
         () => {
             if (clearCache.onSprite(mouseEvents.position)) {
-                console.log("mouse on clearCache");
+                console.log("> mouse on clearCache");
 
                 clearCacheFunnel.toggleOption("paused");
                 clearCache.node.goto("next");
@@ -50,7 +51,7 @@ function constructTitleScreen () {
             if (clearCache.eventStream.recent().name == "mousedown") {
                 clearCache.eventDistributor.distribute(new EventTask("block"));
 
-                console.log("mousedown on clearCache");
+                console.log("> mousedown on clearCache");
                 
                 clearCache.node.goto("next");
                 return;
@@ -63,10 +64,14 @@ function constructTitleScreen () {
         () => {
             if (clearCache.eventStream.recent().name == "mouseup") {
                 lab5.thread.push(lab5App.subSprites.titleScreen.subSprites.clearCache.subSprites.confirmationBox);
+                return;
             }
 
             clearCache.node.postpone();
             clearCache.node.goto("loop");
+        },
+        () => {
+            clearCache.node.restart();
         }
     ]))
 
@@ -77,7 +82,7 @@ function constructTitleScreen () {
         () => {
             
             next.eventStream.clear();
-            console.log("titleScreen Next");
+            console.log("---$ next");
 
         },
         () => {
@@ -102,6 +107,7 @@ function constructTitleScreen () {
             let recentEvent = next.eventStream.recent();
 
             if (recentEvent.name == "mouseup" || recentEvent.name == "keyup") {
+                console.log("!> next");
                 next.eventDistributor.distribute(new EventTask("next"));
                 next.node.goto("next");
                 return;
@@ -115,18 +121,29 @@ function constructTitleScreen () {
             next.node.postponedGoto("loop");
         },
         () => {
-            console.log("next");
+            
         }
     ]))
 
+    keyboardEvents.keyDown.addStream(titleScreen);
+
     titleScreen.addNode(new ChainedFunctions([
         () => {
-            console.log("----|----")
-            console.log("titleScreen");
+            
+            console.log("--$ titleScreen");
 
             lab5.thread.mergeHost(lab5App.subSprites.mouse.subSprites.normalMode);
             lab5.thread.merge(clearCacheFunnel);
             lab5.thread.merge([clearCache,next]);
+        },
+        () => {
+            let recentEvent = titleScreen.eventStream.recent();
+
+            if (recentEvent) {
+                console.log(recentEvent);
+            }
+
+            titleScreen.node.postponedGoto("loop");
         }
     ]))
 

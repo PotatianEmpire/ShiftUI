@@ -10,11 +10,11 @@ let keyboardEvents = {
 document.addEventListener("keydown",ev => {
     let event = new EventTask("keydown",keyboardEvents.importance);
     event.key = ev.key;
-    keyboardEvents.keyDown.distribute(ev);
+    keyboardEvents.keyDown.distribute(event);
 })
 
 document.addEventListener("keyup",ev => {
     let event = new EventTask("keyup",keyboardEvents.importance);
     event.key = ev.key;
-    keyboardEvents.keyUp.distribute(ev);
+    keyboardEvents.keyUp.distribute(event);
 })

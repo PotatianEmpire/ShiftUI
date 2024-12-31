@@ -40,7 +40,8 @@ let lab5App = {
                 }
 
             }
-        }
+        },
 
+        backgroundAnimations: {}
     }
 }

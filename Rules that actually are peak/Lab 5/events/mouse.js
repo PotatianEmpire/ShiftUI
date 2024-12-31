@@ -26,7 +26,8 @@ function constructMouse () {
             mouseEvents.mouseDown.distribute(event);
         } else {
             mouseEvents.mousePress = true;
-            mouseEvents.mouseUp.distribute(event);
+            let upEvent = new EventTask ("mouseup",mouseEvents.importance);
+            mouseEvents.mouseUp.distribute(upEvent);
             mouseEvents.mouseDown.distribute(event);
         }
     });
@@ -38,7 +39,8 @@ function constructMouse () {
             mouseEvents.mouseUp.distribute(event);
         } else {
             mouseEvents.mousePress = false;
-            mouseEvents.mouseDown.distribute(event);
+            let downEvent = new EventTask ("mousedown",mouseEvents.importance);
+            mouseEvents.mouseDown.distribute(downEvent);
             mouseEvents.mouseUp.distribute(event);
         }
     });

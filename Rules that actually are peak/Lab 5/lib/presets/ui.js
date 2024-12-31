@@ -1,9 +1,13 @@
 class UIpresets {
     /**
-     * Creates a button with different continuous states.
-     * @param {Function | ChainedFunctions} idle button idle state
-     * @param {Function | ChainedFunctions} mouseon button when mouse is hovering
-     * @param {Function | ChainedFunctions} mousedown when button is pressed
+     * @typedef {{swap: ExpandedFunctionTypes, continuous: ExpandedFunctionTypes}} SwapFunctionOptions
+     */
+
+    /**
+     * Creates a button with different continuous or swap states.
+     * @param {SwapFunctionOptions} idle button idle state
+     * @param {SwapFunctionOptions} mouseon button when mouse is hovering
+     * @param {SwapFunctionOptions} mousedown when button is pressed
      * @param {Sprite} sprite button sprite
      * @param {Coordinate} mousePosition position of the mouse
      * @param {EventDistributor} mouseDown mousedown event distributor
@@ -18,50 +22,53 @@ class UIpresets {
             
         let button = new ChainedFunctions();
 
-        function funnel () {
-            if (!sprite.onSprite(mousePosition)) {
-                button.goto("start");
-            }
-        }
-
         let idlecf = new ChainedFunctions([
+            idle.swap,
             () => {
                 if (sprite.onSprite(mousePosition)) {
                     idlecf.restart();
                     idlecf.return();
                 }
             },
-            idle,
+            idle.continuous,
             () => {
-                idlecf.postponedGoto("start");
+                idlecf.postponedGoto(1);
             }
         ])
 
         let mouseoncf = new ChainedFunctions([
-            funnel,
+            mouseon.swap,
             () => {
+                if (!sprite.onSprite(mousePosition)) {
+                    mouseoncf.restart();
+                    button.goto("start");
+                }
                 if (button.eventStream.recent().name == "mousedown") {
                     mouseoncf.restart();
                     mouseoncf.return();
                 }
             },
-            mouseon,
+            mouseon.continuous,
             () => {
-                mouseoncf.postponedGoto("start");
+                mouseoncf.postponedGoto(1);
             }
         ])
 
         let mousedowncf = new ChainedFunctions([
-            funnel,
+            mousedown.swap,
             () => {
+                if (!sprite.onSprite(mousePosition)) {
+                    mousedowncf.restart();
+                    button.goto("start");
+                }
                 if (button.eventStream.recent().name == "mouseup") {
                     mousedowncf.restart();
                     mousedowncf.return();
                 }
             },
-            mousedown,
+            mousedown.continuous,
             () => {
-                mousedowncf.postponedGoto("start");
+                mousedowncf.postponedGoto(1);
             }
         ])
 
@@ -83,5 +90,24 @@ class UIpresets {
         mouseUp.addStream(button.eventStream);
 
         return button;
+    }
+}
+
+class FlowPresets {
+    /**
+     * Idles chained function.
+     * @param {Function} eventHandler optionally wait for a specific event
+     */
+    static wait (eventHandler = () => false) {
+        let wait = new ChainedFunctions([
+            () => {
+                if (eventHandler()) {
+                    wait.return();
+                    return;
+                }
+                wait.postponedGoto("loop");
+            }
+        ]);
+        return wait;
     }
 }

@@ -6,90 +6,111 @@ function constructClearCacheConfirmation () {
 
     // visual
 
+    confirm.dimensions.assign(media.images.title.buttons.a.sampleSize);
+    confirm.position.x = -0.5;
+
+    cancel.dimensions.assign(media.images.title.buttons.a.sampleSize);
+    cancel.position.x = 0.5;
+
     // events
 
     confirm.addEventDistributor();
     cancel.addEventDistributor();
 
-    mouseEvents.mouseDown.addStream([confirm,cancel]);
-    mouseEvents.mouseUp.addStream([confirm,cancel]);
-
-    confirm.eventDistributor.addStream([cancel,confirmationBox]);
-    cancel.eventDistributor.addStream([confirm,confirmationBox]);
+    confirm.eventDistributor.addStream([confirmationBox,confirm,cancel]);
+    cancel.eventDistributor.addStream([confirmationBox,confirm,cancel]);
 
     // logic
 
-    let confirmButtonFunnel = new ChainedFunctions();
-
+    let clearCache = new ChainedFunctions([
+        () => {
+            console.log("...clearing cache");
+        }
+    ])
+    
     confirm.addNode(new ChainedFunctions([
         () => {
-            confirm.eventStream.clear();
+            console.log("-----$ confirm");
         },
+        UIpresets.button({swap: () => {
+            confirm.addSample(media.images.title.buttons.a);
+            console.log("> idle confirm");
+        }},{swap: () => {
+            confirm.addSample(media.images.title.buttons.b);
+            console.log("> mouseon confirm");
+        }},{swap: () => {
+            console.log("> mousedown confirm");
+        }},confirm),
         () => {
-            console.log("idle confirm");
-            confirmButtonFunnel.toggleOption("paused");
+            console.log(".confirm clicked");
         },
+        clearCache,
         () => {
-            if (confirm.onSprite(mouseEvents.position)) {
-                console.log("mouseon confirm");
-
-                confirmButtonFunnel.toggleOption("paused");
-                return;
+            confirm.eventDistributor.distribute(new EventTask("closeConfirmationBox"));
+        },
+        FlowPresets.wait(() => cancel.eventStream.recent()),
+        new ChainedFunctions([
+            () => {
+                console.log("@_confirm end")
             }
-
-            confirm.node.postponedGoto("loop");
-        },
+        ]),
         () => {
-            if (confirm.eventStream.recent().name == "mousedown") {
-                console.log("mousedown confirm");
-
-                return;
-            }
-
-            confirm.node.postponedGoto("loop");
-        },
-        () => {
-            if (confirm.eventStream.recent().name == "mouseup") {
-                console.log("confirm clicked");
-                
-                return;
-            }
-
-            confirm.node.postponedGoto("loop");
+            confirm.node.restartAll();
+            confirm.node.return();
         }
     ]))
-
-    confirmButtonFunnel = Thread.createFunnel(confirm,1,null,
-    () => !confirm.onSprite(mouseEvents.position));
 
     cancel.addNode(new ChainedFunctions([
         () => {
-            cancel.eventStream.clear();
-            console.log("cancel");
+            console.log("-----$ cancel");
+            console.log(cancel.node.pointer)
         },
-        UIpresets.button(() => {
-            console.log("idle mouseon");
-        },() => {
-            console.log("mouseon cancel");
-        },() => {
-            console.log("mousedown cancel");
-        },cancel),
+        UIpresets.button({swap: () => {
+            cancel.addSample(media.images.title.buttons.a);
+            console.log("> idle cancel");
+        }},{swap: () => {
+            cancel.addSample(media.images.title.buttons.b);
+            console.log("> mouseon cancel");
+        }},{swap: () => {
+            console.log("> mousedown cancel");
+        }},cancel),
         () => {
-            cancel.node.goto("loop");
-            cancel.node.postpone();
+            console.log(".cancel clicked");
+            cancel.eventDistributor.distribute(new EventTask("closeConfirmationBox"));
+        },
+        FlowPresets.wait(() => cancel.eventStream.recent()),
+        new ChainedFunctions([
+            () => {
+                console.log("@_cancel end");
+            }
+        ]),
+        () => {
+            cancel.node.restartAll();
+            cancel.node.return();
         }
     ]))
 
+    let confirmFunnel = Thread.createFunnel(confirm,"secondLast",confirm.eventStream);
+
+    let cancelFunnel = Thread.createFunnel(cancel,"secondLast",cancel.eventStream);
+
+
     confirmationBox.addNode(new ChainedFunctions([
         () => {
-            lab5.thread.merge([confirmButtonFunnel])
+            lab5.thread.merge([confirmFunnel,cancelFunnel]);
             lab5.thread.merge([confirm,cancel]);
-            console.log("-----|-----");
-            console.log("confimationBox");
+            console.log("----->-----");
+            console.log("----$ confimationBox");
         },
+        FlowPresets.wait(() => confirmationBox.eventStream.recent().name == "closeConfirmationBox"),
+        new ChainedFunctions([
+            () => {
+                console.log("@_confirmationBox end");
+            }
+        ]),
         () => {
-            confirmationBox.node.goto("loop");
-            confirmationBox.node.postpone();
+            confirmationBox.node.restartAll();
+            confirmationBox.node.return();
         }
     ]))
 
