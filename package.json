@@ -1,0 +1,27 @@
+{
+  "name": "shiftui",
+  "version": "1.0.0",
+  "description": "7.1.2095 scientists will discover why quantum physics is how it is.",
+  "main": "application.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "node nodeTest.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PotatianEmpire/ShiftUI.git"
+  },
+  "keywords": [
+    "frontend",
+    "game",
+    "ui"
+  ],
+  "author": "projundef",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/PotatianEmpire/ShiftUI/issues"
+  },
+  "homepage": "https://github.com/PotatianEmpire/ShiftUI#readme"
+}
