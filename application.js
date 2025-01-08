@@ -16,6 +16,8 @@ let postProcessor = new ChainedFunctions([
     }
 ])
 
+let thread = new Thread();
+
 app.addPreProcessor(preProcessor);
 app.addPostProcessor(postProcessor);
 
